@@ -1,0 +1,1909 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEB Stats Lab</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#0E1116; --panel:#161B22; --panel-2:#1D2330; --line:#2A3140;
+  --amber:#F2A93B; --amber-dim:#7A5A22; --crimson:#D6483F; --teal:#36C9B0;
+  --ink:#ECEFF4; --ink-dim:#8B93A1; --court:#15301f;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;}
+.wrap{max-width:960px;margin:0 auto;padding:28px 20px 80px;}
+
+.scoreboard{display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#171C24,#11151B);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin-bottom:22px;font-family:'IBM Plex Mono',monospace;flex-wrap:wrap;gap:8px;}
+.sb-title{font-family:'Oswald',sans-serif;font-weight:700;letter-spacing:.08em;font-size:18px;color:var(--amber);text-transform:uppercase;}
+.sb-steps{display:flex;gap:8px;font-size:11px;color:var(--ink-dim);letter-spacing:.05em;flex-wrap:wrap;}
+.sb-step{padding:4px 9px;border:1px solid var(--line);border-radius:4px;background:none;color:var(--ink-dim);}
+.sb-step:hover:not(.active){border-color:var(--amber);color:var(--amber);}
+.sb-step.active{color:#0E1116;background:var(--amber);border-color:var(--amber);font-weight:600;}
+
+h1.headline{font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(26px,5vw,38px);margin:6px 0 4px;letter-spacing:-0.01em;}
+.sub{color:var(--ink-dim);font-size:14px;margin-bottom:24px;line-height:1.5;}
+
+.btn{cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:10px;padding:14px 16px;font-family:'Inter',sans-serif;font-size:14px;text-align:left;transition:border-color .15s,transform .1s;}
+.btn:hover{border-color:var(--amber);transform:translateY(-1px);}
+.back-btn{display:inline-flex;align-items:center;gap:6px;color:var(--ink-dim);background:none;border:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:12.5px;margin-bottom:18px;padding:0;letter-spacing:.03em;}
+.back-btn:hover{color:var(--amber);}
+
+.grid{display:grid;gap:12px;}
+.grid.leagues{grid-template-columns:repeat(2,1fr);}
+.grid.mode{grid-template-columns:repeat(2,1fr);max-width:520px;}
+.grid.list{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));}
+
+.league-card .tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.08em;color:var(--bg);background:var(--amber);padding:2px 7px;border-radius:3px;margin-bottom:8px;text-transform:uppercase;}
+.league-card .tag.fem{background:var(--crimson);color:#fff;}
+.league-card h3{font-family:'Oswald',sans-serif;font-size:19px;margin:0 0 4px;font-weight:600;}
+.league-card p{margin:0;color:var(--ink-dim);font-size:12.5px;}
+
+.mode-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:24px 18px;}
+.mode-card .icon{font-size:26px;}
+.mode-card h3{font-family:'Oswald',sans-serif;font-size:18px;margin:0;font-weight:600;}
+.mode-card p{margin:0;color:var(--ink-dim);font-size:12.5px;}
+
+.entity-card{display:flex;flex-direction:column;gap:6px;}
+.entity-card .name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;}
+.entity-card .meta{font-size:11.5px;color:var(--ink-dim);font-family:'IBM Plex Mono',monospace;}
+.entity-card .badge{align-self:flex-start;font-size:10px;font-family:'IBM Plex Mono',monospace;color:var(--teal);border:1px solid var(--teal);padding:1px 6px;border-radius:3px;letter-spacing:.04em;}
+.entity-card .real{color:var(--amber);border-color:var(--amber);}
+
+.sheet{background:linear-gradient(180deg,var(--panel),#12161D);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+.sheet-head{padding:22px 24px;border-bottom:1px solid var(--line);background:repeating-linear-gradient(135deg,var(--court) 0 2px,#102718 2px 4px);position:relative;}
+.sheet-head::before{content:"";position:absolute;inset:0;background:rgba(14,17,22,.78);}
+.sheet-head > *{position:relative;}
+.sheet-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--amber);letter-spacing:.08em;text-transform:uppercase;}
+.sheet-name{font-family:'Oswald',sans-serif;font-size:clamp(22px,4vw,30px);font-weight:700;margin:4px 0;}
+.sheet-meta{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--ink-dim);font-family:'IBM Plex Mono',monospace;}
+.sheet-body{padding:22px 24px;}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:22px;}
+.stat-cell{background:var(--panel-2);padding:13px 10px;text-align:center;}
+.stat-cell .val{font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:var(--amber);}
+.stat-cell .lab{font-size:10px;color:var(--ink-dim);letter-spacing:.03em;text-transform:uppercase;margin-top:3px;}
+
+h4.section-title{font-family:'Oswald',sans-serif;font-size:13.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 10px;display:flex;align-items:center;gap:8px;}
+h4.section-title::after{content:"";flex:1;height:1px;background:var(--line);}
+
+.adv-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px dashed var(--line);font-size:13px;}
+.adv-row:last-child{border-bottom:none;}
+.adv-row .name{color:var(--ink-dim);}
+.adv-row .bar-wrap{display:flex;align-items:center;gap:10px;width:52%;}
+.bar{flex:1;height:6px;background:var(--panel-2);border-radius:3px;overflow:hidden;}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--teal));}
+.adv-row .num{font-family:'IBM Plex Mono',monospace;width:50px;text-align:right;color:var(--ink);flex-shrink:0;}
+
+.chart-box{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:16px;margin:18px 0;}
+.chart-box canvas{max-height:280px;}
+
+.heatmap{overflow-x:auto;margin:14px 0;}
+.heatmap table{border-collapse:collapse;width:100%;font-family:'IBM Plex Mono',monospace;font-size:11.5px;}
+.heatmap th{text-align:left;color:var(--ink-dim);font-weight:500;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;}
+.heatmap td{padding:7px 9px;text-align:center;color:#0E1116;font-weight:600;white-space:nowrap;}
+.heatmap td.teamname{text-align:left;color:var(--ink);font-weight:500;background:none !important;font-family:'Inter',sans-serif;}
+
+.note{margin-top:16px;padding:12px 14px;border:1px dashed var(--amber-dim);border-radius:8px;font-size:11.5px;color:var(--ink-dim);line-height:1.55;}
+.note b{color:var(--amber);}
+.note.confirmed{border-color:var(--teal);}
+.note.confirmed b{color:var(--teal);}
+
+.footer-note{margin-top:36px;font-size:11.5px;color:var(--ink-dim);line-height:1.6;border-top:1px solid var(--line);padding-top:16px;}
+.footer-note a{color:var(--amber);}
+
+.bio-card{display:flex;gap:16px;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;}
+.bio-photo{width:84px;height:84px;border-radius:10px;object-fit:cover;background:var(--panel-2);border:1px solid var(--line);flex-shrink:0;}
+.bio-photo-fallback{width:84px;height:84px;border-radius:10px;background:linear-gradient(135deg,var(--panel-2),#232A38);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:26px;color:var(--ink-dim);flex-shrink:0;}
+.bio-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px 18px;flex:1;min-width:220px;}
+.bio-item{font-size:12px;}
+.bio-item .k{color:var(--ink-dim);font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;display:block;margin-bottom:2px;}
+.bio-item .v{color:var(--ink);}
+.bio-item .v.na{color:var(--ink-dim);font-style:italic;}
+
+.metric-link{cursor:pointer;border-bottom:1px dotted var(--ink-dim);}
+.metric-link:hover{color:var(--amber);border-bottom-color:var(--amber);}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(5,7,10,.72);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px;}
+.modal-box{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:420px;width:100%;padding:22px;position:relative;}
+.modal-box h4{font-family:'Oswald',sans-serif;color:var(--amber);font-size:17px;margin:0 0 10px;}
+.modal-box p{font-size:13.5px;line-height:1.55;color:var(--ink);margin:0;}
+.modal-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--ink-dim);font-size:20px;cursor:pointer;line-height:1;}
+.modal-close:hover{color:var(--amber);}
+
+.compare-head{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:center;margin-bottom:6px;}
+.compare-head .vs{font-family:'Oswald',sans-serif;color:var(--ink-dim);font-size:13px;text-align:center;}
+.compare-player-card{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;}
+.compare-player-card .name{font-family:'Oswald',sans-serif;font-size:16px;font-weight:600;}
+.compare-player-card .meta{font-size:11px;color:var(--ink-dim);font-family:'IBM Plex Mono',monospace;}
+table.compare-table{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0;}
+table.compare-table td, table.compare-table th{padding:9px 8px;border-bottom:1px solid var(--line);text-align:center;}
+table.compare-table th{color:var(--ink-dim);font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.04em;}
+table.compare-table td.metric-name{text-align:left;color:var(--ink-dim);font-size:12.5px;}
+table.compare-table td.win{color:var(--teal);font-weight:700;font-family:'IBM Plex Mono',monospace;}
+table.compare-table td.lose{color:var(--ink);font-family:'IBM Plex Mono',monospace;}
+table.compare-table td.tie{color:var(--ink-dim);font-family:'IBM Plex Mono',monospace;}
+
+.illustrative-tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--bg);background:var(--ink-dim);padding:2px 7px;border-radius:3px;margin-left:8px;vertical-align:middle;}
+.court-wrap{display:flex;flex-wrap:wrap;gap:20px;align-items:flex-start;}
+.court-wrap svg{max-width:340px;width:100%;height:auto;flex-shrink:0;}
+.zone-legend{flex:1;min-width:180px;font-size:12px;}
+.zone-legend .zrow{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px dashed var(--line);}
+.zone-legend .zswatch{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+.zone-legend .znum{margin-left:auto;font-family:'IBM Plex Mono',monospace;color:var(--amber);}
+
+table.lineup-table{width:100%;border-collapse:collapse;font-size:12px;margin:10px 0;}
+table.lineup-table th{text-align:left;color:var(--ink-dim);font-weight:500;padding:7px 8px;border-bottom:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:10.5px;text-transform:uppercase;}
+table.lineup-table td{padding:8px;border-bottom:1px solid var(--line);}
+table.lineup-table td.pos{color:var(--teal);font-family:'IBM Plex Mono',monospace;font-weight:600;}
+table.lineup-table td.neg{color:var(--crimson);font-family:'IBM Plex Mono',monospace;font-weight:600;}
+
+table.pm-table{width:100%;border-collapse:collapse;font-size:11.5px;margin:10px 0;font-family:'IBM Plex Mono',monospace;}
+table.pm-table th{text-align:left;color:var(--ink-dim);font-weight:500;padding:6px 7px;border-bottom:1px solid var(--line);font-size:10px;text-transform:uppercase;}
+table.pm-table td{padding:6px 7px;border-bottom:1px solid var(--line);white-space:nowrap;}
+table.pm-table td.pname{font-family:'Inter',sans-serif;white-space:normal;}
+table.pm-table td.pm-pos{color:var(--teal);font-weight:600;}
+table.pm-table td.pm-neg{color:var(--crimson);font-weight:600;}
+
+@media (max-width:560px){
+  .grid.leagues{grid-template-columns:1fr;}
+  .grid.mode{grid-template-columns:1fr;}
+}
+
+.pdf-btn{display:inline-flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--amber);color:var(--amber);border-radius:8px;padding:8px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;cursor:pointer;margin-left:auto;}
+.pdf-btn:hover{background:var(--amber);color:var(--bg);}
+.sheet-head-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+
+@media print{
+  :root{
+    --bg:#ffffff; --panel:#ffffff; --panel-2:#f4f4f4; --line:#ccc;
+    --ink:#111111; --ink-dim:#444444; --amber:#a05a00; --teal:#0e7c66; --crimson:#a3231d; --court:#eef6ee;
+  }
+  body{background:#fff;}
+  .wrap{max-width:100%;padding:0;}
+  .scoreboard, .back-btn, .no-print, #compareBar, #playerSearch, #compareToggle{display:none !important;}
+  .sheet{border:1px solid #ccc;}
+  .sheet-head{background:#f4f4f4;}
+  .sheet-head::before{display:none;}
+  .chart-box{break-inside:avoid;}
+  .adv-row, .stat-grid, table{break-inside:avoid;}
+  a{color:inherit;text-decoration:none;}
+  .metric-link{border-bottom:none;}
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* =======================================================================
+   FEB STATS LAB — fuentes de datos:
+   - baloncestoenvivo.feb.es (equipos, medias oficiales de la temporada
+     2025/26 por partido: PT, T2, T3, TL, rebotes, asistencias, pérdidas...
+     y rankings individuales de puntos)
+   - feb.es (composición oficial de las 4 competiciones 2025/26)
+   - proballers.com (contexto de plantillas/jugadores)
+   Los 4 Factores de Dean Oliver de cada equipo están calculados a partir
+   de esas medias oficiales reales (eFG%, TOV%, tasa de rebote ofensivo
+   propio, FT Rate). Cuando el marcador dice "real", el dato de puntos por
+   partido procede directamente del ranking oficial. El resto de variables
+   de caja (minutos, tiros, pérdidas, robos...) de cada jugador son un
+   perfil modelado de forma realista para poder calcular con fórmulas
+   estándar las métricas avanzadas solicitadas (eFG%, TS%, USG%, ORtg/DRtg,
+   Net Rating, PER, AST%, TRB%, TOV%) — se marcan como "aprox." porque no
+   hay box-score jugador a jugador público en estas fuentes.
+======================================================================= */
+
+// ---- Contexto de liga para fórmulas de jugador (aprox., basado en las medias reales de equipo) ----
+const LEAGUE_CTX = { pace: 71, teamFGM: 27, teamTRB: 64 };
+
+function computeAdvanced(p){
+  const pts = (p.fgm-p.tpm)*2 + p.tpm*3 + p.ftm;
+  const fga = p.fga, fgm = p.fgm, tpm = p.tpm, ftm = p.ftm, fta = p.fta;
+  const poss = fga + 0.44*fta + p.tov;
+  const efg = fga ? ((fgm+0.5*tpm)/fga*100) : 0;
+  const ts = (fga+fta) ? (pts/(2*(fga+0.44*fta))*100) : 0;
+  const usg = Math.min(38, (poss*(200/5))/(p.min*LEAGUE_CTX.pace)*100);
+  const tovPct = poss ? (p.tov/poss*100) : 0;
+  const astPct = Math.max(2, 100*p.ast/(((p.min/40)*LEAGUE_CTX.teamFGM)-fgm));
+  const trb = p.oreb+p.dreb;
+  const trbPct = Math.min(45, 100*trb*40/(p.min*LEAGUE_CTX.teamTRB));
+  const ortg = poss ? (pts/poss*100) : 0;
+  const drtg = 109 - (p.stl+p.blk)*2.3 + p.tov*0.4;
+  const netrtg = ortg-drtg;
+  const per = ((pts + trb*1.1 + p.ast*1.5 + p.stl*2 + p.blk*1.8 - p.tov*1.2 - (fga-fgm)*0.6 - (fta-ftm)*0.35) / p.min) * 30;
+  return {pts,efg,ts,usg,tovPct,astPct,trbPct,ortg,drtg,netrtg,per,trb};
+}
+
+// ---- Posesiones y ritmo por equipo (calculado sobre datos reales de baloncestoenvivo.feb.es) ----
+// Fórmula estándar: Poss = FGA - OREB + TOV + 0,44*FTA, aplicada a las medias reales de tiro/rebote/pérdida
+// de cada equipo (fuente: estadisticas.aspx por competición, temporada 2025/26).
+const POSS_DATA = {
+  "Melilla Ciudad del Deporte":76.5,"Grupo Alega Cantabria":75.7,"Grupo Ureta Tizona Burgos":77.3,
+  "HLA Alicante":74.4,"Leyma Coruña":77.8,"Alimerka Oviedo Baloncesto":77.2,"Caja Rural CB Zamora":78.7,
+  "Inveready Gipuzkoa Basket":72.7,"Fibwi Mallorca Bàsquet Palma":75.7,"Palmer Basket Mallorca Palma":74.5,
+  "Grupo Caesa Seguros FC Cartagena CB":76.0,"Hestia Menorca":72.6,"Súper Agropal Palencia":74.4,
+  "Monbus Obradoiro":77.0,"Movistar Estudiantes":73.9,"Cloud.Gal Ourense Baloncesto":74.4,"Flexicar Fuenlabrada":76.1,
+  "Perfumerías Avenida":68.9,"Casademont Zaragoza":73.7,"Hozono Global Jairis":67.6,"Valencia B.C.":72.6,
+  "Durán Maquinaria Ensino":75.8,"CAB Estepona Jardín Costa del Sol":70.9,"Innova-TSN Leganés":77.7,"Spar Girona":72.3,
+  "Recoletas Zamora":70.6,"Osés Construcción Ardoi":73.5,"Lima Horta Barcelona":73.8,
+  "Alter Enersun Al-Qázeres Extremadura":71.7,"Unicaja Mijas":76.7,"Bosonit Unibasket":70.2,"Celta Femxa Zorka":70.5,
+  "Bueno Arenas Albacete Basket":75.9,"Amics Castelló":77.0,"Class Basquet Sant Antoni":77.4
+};
+function getPoss(teamName){ return POSS_DATA[teamName] !== undefined ? POSS_DATA[teamName] : null; }
+
+// ---- Generador de perfil de caja a partir de un PPG real confirmado ----
+// Los puntos por partido (ppg) son reales (ranking oficial baloncestoenvivo.feb.es).
+// El resto de variables de caja (tiros, minutos, rebotes, asistencias, robos, tapones, pérdidas)
+// se generan con una heurística estándar y consistente para poder calcular las métricas avanzadas;
+// no son cifras publicadas jugador a jugador por FEB.
+function mkReal(name, team, pos, games, ppg){
+  const ftm = ppg*0.18, restPts = ppg-ftm;
+  const twoPtsPts = restPts*0.66, threePtsPts = restPts*0.34;
+  const twoPM = twoPtsPts/2, threePM = threePtsPts/3;
+  const twoPA = twoPM/0.50, threePA = threePM/0.34;
+  const fta = ftm/0.78;
+  return {
+    real:true, name, team, pos:pos||'Jugador/a', nat:'', games, min: +(20+ppg*0.55).toFixed(1),
+    fgm:+(twoPM+threePM).toFixed(2), fga:+(twoPA+threePA).toFixed(2), tpm:+threePM.toFixed(2), tpa:+threePA.toFixed(2),
+    ftm:+ftm.toFixed(2), fta:+fta.toFixed(2),
+    oreb:+(0.9+ppg*0.06).toFixed(1), dreb:+(1.8+ppg*0.13).toFixed(1),
+    ast:+(1.2+ppg*0.11).toFixed(1), stl:+(0.6+ppg*0.03).toFixed(1), blk:+(0.15+ppg*0.015).toFixed(2),
+    tov:+(0.9+ppg*0.07).toFixed(1)
+  };
+}
+
+// ---- Media de liga (jugadores): calculada dinámicamente sobre los jugadores cargados de cada liga ----
+// ---- Media winsorizada ----
+// Recorta los valores extremos (por debajo del percentil p y por encima del 100-p) al propio
+// límite del percentil antes de calcular la media, para que un dato atípico (p.ej. un jugador con
+// muy pocos minutos o un partido puntual con cifras disparadas) no distorsione la media del grupo.
+function winsorize(arr, trimPct=0.1){
+  if(!arr.length) return [];
+  const sorted=[...arr].sort((a,b)=>a-b);
+  const n=sorted.length;
+  const lowIdx=Math.floor(n*trimPct);
+  const highIdx=Math.min(n-1, Math.ceil(n*(1-trimPct))-1);
+  const lowVal=sorted[Math.max(0,lowIdx)];
+  const highVal=sorted[Math.max(0,highIdx)];
+  return arr.map(v=> v<lowVal?lowVal : v>highVal?highVal : v);
+}
+function winsorizedMean(arr, trimPct=0.1){
+  if(!arr.length) return 0;
+  const w=winsorize(arr, trimPct);
+  return w.reduce((s,v)=>s+v,0)/w.length;
+}
+
+function leaguePlayerAvg(players){
+  const advs = players.map(computeAdvanced);
+  const wm = (arr)=>winsorizedMean(arr, 0.1);
+  return {
+    pts: wm(advs.map(a=>a.pts)), trb: wm(advs.map(a=>a.trb)),
+    ast: wm(players.map(p=>p.ast)), stl: wm(players.map(p=>p.stl)),
+    efg: wm(advs.map(a=>a.efg)), ts: wm(advs.map(a=>a.ts)), usg: wm(advs.map(a=>a.usg)), astPct: wm(advs.map(a=>a.astPct)),
+    trbPct: wm(advs.map(a=>a.trbPct)), tovPct: wm(advs.map(a=>a.tovPct)), ortg: wm(advs.map(a=>a.ortg)), drtg: wm(advs.map(a=>a.drtg)), per: wm(advs.map(a=>a.per))
+  };
+}
+
+// Media de liga de los 4 Factores, calculada como media aritmética simple a partir de los equipos con datos reales
+// (la media winsorizada solo se aplica a las estadísticas de jugadores, no de equipos)
+function leagueAvgFFComputed(teams){
+  const withFF = teams.filter(t=>t.ff);
+  if(!withFF.length) return null;
+  const plainMean = (arr)=> arr.reduce((s,v)=>s+v,0)/arr.length;
+  return {
+    efg: plainMean(withFF.map(t=>t.ff.efg)),
+    tov: plainMean(withFF.map(t=>t.ff.tov)),
+    orb: plainMean(withFF.map(t=>t.ff.orb)),
+    ftr: plainMean(withFF.map(t=>t.ff.ftr))
+  };
+}
+
+// Media de los jugadores que ocupan la misma posición (real u estimada, ver nota en la ficha)
+function positionAvg(players, pos){
+  const group = players.filter(p=>p.pos===pos);
+  if(!group.length) return null;
+  return {n:group.length, ...leaguePlayerAvg(group)};
+}
+
+// ---- Partido real de referencia con box-score y +/- por jugadora (fuente: baloncestoenvivo.feb.es/partido/2513076) ----
+const REAL_GAME_LFENDESA = {
+  comp:"LF Endesa 2025/26", date:"10/05/2026", pista:"Pavelló Municipal Girona Fontajau (Girona)",
+  home:{name:"Spar Girona", score:73, quarters:[28,17,15,13]},
+  away:{name:"Valencia B.C.", score:73, quarters:[20,26,10,17]},
+  players:[
+    {team:"Spar Girona", name:"Holm, Klara Maria Susanne", min:"34:05", pts:22, fg:"8/15", fgpct:53.3, ft:"5/6", reb:6, ast:2, stl:1, tov:1, pm:4},
+    {team:"Spar Girona", name:"Coulibaly, Mariam Alou", min:"28:38", pts:23, fg:"9/13", fgpct:69.2, ft:"4/4", reb:7, ast:1, stl:1, tov:0, pm:1},
+    {team:"Spar Girona", name:"López Rodríguez, Ainhoa", min:"25:07", pts:8, fg:"4/7", fgpct:57.1, ft:"0/0", reb:2, ast:5, stl:0, tov:4, pm:10},
+    {team:"Spar Girona", name:"Guerrero Alcántara, Carolina", min:"35:41", pts:3, fg:"1/4", fgpct:25.0, ft:"0/0", reb:6, ast:3, stl:1, tov:1, pm:6},
+    {team:"Spar Girona", name:"Jocyte, Juste Veronika", min:"34:25", pts:5, fg:"2/7", fgpct:28.6, ft:"0/0", reb:4, ast:4, stl:2, tov:1, pm:3},
+    {team:"Valencia B.C.", name:"Anderson, Ivon Marc", min:"22:54", pts:10, fg:"3/8", fgpct:37.5, ft:"3/5", reb:2, ast:5, stl:1, tov:1, pm:-4},
+    {team:"Valencia B.C.", name:"Ouviña Modrego, Cristina", min:"09:21", pts:5, fg:"2/3", fgpct:66.7, ft:"0/0", reb:2, ast:1, stl:0, tov:0, pm:3},
+    {team:"Valencia B.C.", name:"Buenavida Estévez, Elena", min:"23:19", pts:4, fg:"1/7", fgpct:14.3, ft:"2/2", reb:3, ast:4, stl:2, tov:1, pm:-4}
+  ],
+  source:"baloncestoenvivo.feb.es/partido/2513076 — box-score oficial completo, incluida la columna +/- (más/menos) por jugadora."
+};
+
+// ---- Convierte una fila real de proballers.com (medias de temporada) en un jugador completo ----
+// Datos reales: pts, reb, ast, partidos jugados, minutos, %3P, %TC, %TL, rebotes ofensivos, robos, pérdidas, tapones.
+// Como la fuente da porcentajes de tiro pero no el desglose exacto de intentos de 2/3, los intentos (fga/tpa)
+// se reconstruyen matemáticamente a partir de esos % reales para que sean internamente consistentes.
+function realFromRow(name, team, pts, reb, ast, games, min, tpPctRaw, fgPctRaw, ftPctRaw, oreb, stl, tov, blk){
+  const fgPct = fgPctRaw/100, tpPct = (tpPctRaw||0)/100, ftPct = (ftPctRaw||0)/100;
+  const ftm = pts*0.18;
+  const fta = ftPct>0 ? ftm/ftPct : (ftm>0 ? ftm/0.7 : 0);
+  const tpShare = tpPct>0.001 ? 0.32 : 0.03;
+  const remainPts = Math.max(0, pts-ftm);
+  const denom = 2*fgPct + tpShare*tpPct;
+  const fga = denom>0 ? remainPts/denom : pts/2;
+  const tpa = fga*tpShare;
+  const tpm = tpa*tpPct;
+  const fgm = fga*fgPct;
+  return {
+    real:true, name, team, pos:'Jugador/a', nat:'', games, min,
+    fgm:+fgm.toFixed(2), fga:+fga.toFixed(2), tpm:+tpm.toFixed(2), tpa:+tpa.toFixed(2),
+    ftm:+ftm.toFixed(2), fta:+fta.toFixed(2),
+    oreb:+oreb.toFixed(2), dreb:+Math.max(0,reb-oreb).toFixed(2),
+    ast:+ast.toFixed(2), stl:+stl.toFixed(2), blk:+blk.toFixed(2), tov:+tov.toFixed(2)
+  };
+}
+
+// ---- Datos biográficos reales ----
+// Altura (cm) y edad: reales, de las fichas de equipo de proballers.com (temporada 2025/26).
+// Bio completa (foto, nacimiento, nacionalidad, posición oficial): solo disponible para los 3
+// jugadores de Hestia Menorca consultados en la ficha oficial de baloncestoenvivo.feb.es/Equipo.aspx?i=981300;
+// para el resto no se dispone de esa granularidad en las fuentes usadas, así que no se rellena con datos inventados.
+const BIO_HW = {
+  "Mustapha Heron":{h:197,a:28},"Sebastian Aris Ceccardi":{h:null,a:null},"Ivan Cruz":{h:208,a:34},
+  "Darel Poirier":{h:207,a:28},"Nathan Hoover":{h:199,a:28},"Sergio Rodriguez Febles":{h:204,a:32},
+  "Ludgy Debaut":{h:212,a:null},"Roberts Stumbris":{h:198,a:32},"Michael Caicedo":{h:199,a:22},
+  "Christian Diaz":{h:185,a:33},"Pablo Cordoba":{h:180,a:28},"Javier Garcia":{h:198,a:24},
+  "Nick McMullen":{h:202,a:23},"Morgan Stilma":{h:203,a:25},"Jeffrey Godspower":{h:200,a:23},
+  "Jonas Zohore Bergstedt":{h:210,a:34},"Pavlo Krutous":{h:201,a:33},"Javier Ezquerra":{h:185,a:23},
+  "Stefan Peno":{h:194,a:28},
+  "Marques Townes":{h:192,a:30},"Gregory Parham II":{h:192,a:26},"Raul Lobaco":{h:195,a:25},
+  "Calvin Hermanson":{h:200,a:31},"Alonso Faure Ribes":{h:208,a:23},"Francis Nwaokorie":{h:202,a:23},
+  "Dan Duscak":{h:185,a:23},"Daniil Shelist":{h:202,a:22},"Robert Cosialls":{h:190,a:29},
+  "Federico Copes":{h:199,a:23},"Jorge Arias Gonzalez":{h:null,a:19},"Pablo Gonzalez":{h:190,a:24},
+  "Kobe Webster":{h:183,a:null},"Vitor Faverani":{h:211,a:37},"Sebastian Thomas":{h:185,a:null},
+  "Spencer Svejcar":{h:193,a:31},"Javi Lopez":{h:196,a:26},"Isaiah Stone Rivera Carroll":{h:196,a:24},
+  "Sediq Garuba":{h:193,a:21},"Amari Kelly":{h:206,a:26},"Adria Domenech":{h:200,a:23},
+  "Jordan Davis":{h:192,a:28},"Chayce Polynice":{h:210,a:24},"Alberto Martin":{h:184,a:30},
+  "Tyrell Roberts":{h:180,a:26},"Josep Peris":{h:192,a:25},"Colby Rogers":{h:195,a:null},
+  "Alvaro Martinez":{h:199,a:22},"Stymir Snaer Thrastarson":{h:null,a:null},"Omar Lo":{h:205,a:28},
+  "Joey Van Zegeren":{h:200,a:35},"Jonas Paukste":{h:224,a:25},"Jacob Round":{h:192,a:25},
+  "Toni Naspler":{h:195,a:22},"Bine Prepelic":{h:200,a:24},"Anton Bouzan":{h:198,a:30},
+  "David Kristensen":{h:203,a:27},
+  "Brian Vazquez":{h:190,a:31},"Pedro Bombino":{h:206,a:25},"Lucas Capalbo":{h:175,a:25},
+  "Lysander Bracey":{h:199,a:29},"Osvaldas Matulionis":{h:186,a:34},"Jon Aramburu":{h:200,a:33},
+  "Alessandro Scariolo":{h:190,a:24},"Laron Smith":{h:189,a:32},"Fallou Niang":{h:202,a:24},
+  "Loïc Menuge":{h:199,a:26},"Juan Bocca":{h:198,a:20},
+  "Vitor Benite":{h:191,a:35},"Ivan Aurrecoechea":{h:186,a:30},"Mateo Diaz":{h:202,a:23},
+  "Alex Murphy":{h:206,a:32},"Daniel Manchon":{h:193,a:27},"Prince Ali":{h:193,a:29},
+  "Jonathan Kasibabu":{h:214,a:29},"Brooks Debisschop":{h:205,a:27},
+  "Jalen Tate":{h:196,a:27},"Lance Terry":{h:187,a:22},"Tanner Ngom":{h:215,a:27},
+  "Manex Ansorregui":{h:195,a:23},"Giorgi Korsantia":{h:203,a:27},"Tyler McGhie":{h:195,a:null},
+  "Ondrej Hanzlik":{h:200,a:23},"Javier Nicolau":{h:208,a:28},
+  "Nacho Arroyo":{h:187,a:25},"Aitor Zubizarreta":{h:200,a:30},"Mikel Motos":{h:199,a:32},"Ignacio Rosa":{h:204,a:26},"Aitor Anabitarte Soroa":{h:null,a:null},
+  "Reggie Johnson":{h:190,a:31},"Jassel Perez":{h:190,a:24},"Miha Lapornik":{h:194,a:32},
+  "Dylan Addae-Wusu":{h:192,a:null},"Jiahao Yu":{h:220,a:22},"Samuel Rodriguez":{h:182,a:28},
+  "Christian Lutete":{h:196,a:29},"Pablo Hernandez":{h:201,a:28},"Jahvaughn Powell":{h:183,a:29},
+  "German Martinez":{h:199,a:27},
+  "Jordan Walker":{h:185,a:28},"Kevin Larsen":{h:188,a:32},"Eddy Polanco":{h:193,a:31},
+  "Mike Torres":{h:199,a:31},"Jordan Bone":{h:191,a:28},"Sander Harrie Annie Hollanders":{h:null,a:24},
+  "Alejandro Jorda":{h:194,a:30},"Yasiin Joseph":{h:185,a:29},"Unai Mendicote Rubio":{h:197,a:26},
+  "Tucker Richardson":{h:196,a:26},
+  "Paul Jorgensen":{h:198,a:29},"Caio Pacheco":{h:190,a:26},"Joe Cremo":{h:193,a:29},
+  "Dino Radoncic":{h:202,a:26},"Yoanki Mensia":{h:197,a:28},"Jacobo Diaz":{h:200,a:29},
+  "Ilimane Diop":{h:211,a:30},"Serigne Barro":{h:208,a:30},"Didac Cuevas":{h:188,a:25},
+  "Alex Barcello":{h:187,a:27},"Yunio Barrueta":{h:199,a:32},"Leo Westermann":{h:198,a:33},
+  "Felipe Dos Anjos":{h:218,a:27},"Diogo Brito":{h:185,a:28},"Dejan Kravic":{h:213,a:35},
+  "Olle Lundqvist":{h:188,a:26},"Sergi Quintela":{h:185,a:29},"Micah Speight":{h:198,a:27},
+  "Alejandro Galan":{h:187,a:26},
+  "Rafael Lisboa":{h:183,a:26},"Gabe Kalscheur":{h:195,a:26},"Chinedu Okanu":{h:200,a:null},
+  "Sean McDonnell":{h:187,a:30},"Martin Fernandez":{h:199,a:24},"Isaac Vazquez Perez":{h:193,a:21},
+  "Kentwan Smith":{h:203,a:34},
+  "Philip Scrubb":{h:192,a:33},"Hansel Atencia":{h:199,a:28},"Duda Sanadze":{h:196,a:33},
+  "Joan Feliu":{h:195,a:26},"Tray Hollowell":{h:188,a:27},"Ander Urdiain":{h:200,a:25},"Nuno Sa":{h:193,a:28},
+  "Michael Abiodun Nugu":{h:null,a:null},"Marquis Jackson":{h:190,a:31},"Jan Zidek":{h:204,a:26},
+  "Gerard Jofresa":{h:null,a:24},"Arnau Parrado":{h:192,a:25},"Ramon Vila":{h:204,a:28},"Felix Terins":{h:188,a:27}
+};
+// Bio completa real (fuente: baloncestoenvivo.feb.es/Equipo.aspx?i=981300, plantilla oficial Hestia Menorca)
+const BIO_FULL = {
+  "Spencer Philip Littleson":{photo:"https://imagenes.feb.es/Foto.aspx?c=2650859", birth:"29/05/1998", birthplace:"Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Escolta", h:192},
+  "Fernando Zurbriggen":{photo:"https://imagenes.feb.es/Foto.aspx?c=2446720", birth:"20/10/1997", birthplace:"Italia", nat:"🇮🇹 Italia", pos:"Base", h:185},
+  "Adams Sola Iddrisu":{photo:"https://imagenes.feb.es/Foto.aspx?c=1875914", birth:"27/07/2000", birthplace:"Madrid (Madrid)", nat:"🇪🇸 España", pos:"Alero", h:193},
+  // Bio real adicional (fuente: fichas de jugador de proballers.com, consultadas individualmente)
+  "Alex Barcello":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/alex-barcello-1ef7d17a-2795-69f0-947c-9b13d0fe28e9.png", birth:"31/08/1998", birthplace:"Phoenix (AZ), Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Base", h:187},
+  "Jordan Walker":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/jordan-walker-1-1ee86405-3fb8-69b6-8ee7-2924c5d82d96.png", birth:"19/10/1997", birthplace:"Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Base", h:185},
+  "Reggie Johnson":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/reginald-johnson2-1ef88d55-c334-6f5e-84ed-ab0dff51562f.png", birth:"07/05/1994", birthplace:"Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Base", h:190},
+  "Vitor Benite":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/vitor-benite-1f080d7f-b170-6aa2-a51b-b5028a4e21c8.png", birth:"20/02/1990", birthplace:"Jundiaí, São Paulo (Brasil)", nat:"🇧🇷 Brasil / 🇮🇹 Italia (doble nacionalidad)", pos:"Escolta", h:191, w:94},
+  "Kevin Larsen":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/kevin-ricki-larsen-1ee8eddd-9a8e-6892-bb74-ed4d7cced0a5.png", birth:"17/07/1993", birthplace:"Copenhague (Dinamarca)", nat:"🇩🇰 Dinamarca", pos:"Ala-Pívot", h:208, w:112},
+  "Marques Townes":{photo:null, birth:"03/09/1995", birthplace:"Edison, Nueva Jersey (EE.UU.)", nat:"🇩🇴 Rep. Dominicana / 🇺🇸 EE.UU. (doble nacionalidad)", pos:"Escolta", h:193, w:94},
+  // Ampliación con la ficha oficial de plantilla de baloncestoenvivo.feb.es (Alimerka Oviedo)
+  "Robert Cosialls":{photo:"https://imagenes.feb.es/Foto.aspx?c=1662155", birth:"20/12/1996", birthplace:"Sant Cugat del Vallès (Barcelona)", nat:"🇪🇸 España", pos:"Pívot", h:204},
+  "Dan Duscak":{photo:"https://imagenes.feb.es/Foto.aspx?c=2822575", birth:"02/07/2002", birthplace:"A Coruña", nat:"🇸🇮 Eslovenia", pos:"Base", h:185},
+  "Raul Lobaco":{photo:"https://imagenes.feb.es/Foto.aspx?c=1978545", birth:"29/11/2000", birthplace:"España", nat:"🇪🇸 España", pos:"Escolta", h:190},
+  "Gaizka Maiza":{photo:null, birth:"14/07/1996 (Ibarra)", birthplace:"Ibarra (Guipúzcoa)", nat:"🇪🇸 España", pos:"Base", h:191},
+  "Philip Scrubb":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/sans-titre-1-1ed4bee6-97a9-6bca-abdd-d9424302d95e.jpg", birth:"27/11/1992", birthplace:"Canadá", nat:"🇨🇦 Canadá", pos:"Escolta", h:192},
+  "Tyrell Roberts":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/tyrell-roberts-1-1ee83096-c0e8-613c-b34c-39fbd37d1a77.png", birth:"01/01/1999", birthplace:"Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Base", h:180},
+  "Mustapha Heron":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/mustapha-hero-1ef0a50a-69d8-62b6-bae4-195e8ca40332.png", birth:"12/12/1997", birthplace:"Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Alero", h:197}
+};
+
+// ---- Clasificador de posición (ESTIMADO cuando no hay posición oficial confirmada) ----
+// Heurística real basada en altura y perfil de rebotes/asistencias del propio jugador (no inventa datos,
+// pero es una aproximación, no la posición oficial de la ficha del club).
+function estimatePosition(heightCm, ast, reb){
+  const h = heightCm || 195;
+  if(ast >= 4) return 'Base';
+  if(h >= 205 || reb >= 6) return 'Pívot';
+  if(h >= 198) return 'Ala-Pívot';
+  if(ast >= 2.3) return 'Base';
+  if(h <= 190 && reb < 3) return 'Escolta';
+  return 'Alero';
+}
+
+// ---- Escudos reales de equipo (API pública de proballers.com: /api/getTeamLogo?id=X) ----
+const TEAM_LOGOS = {
+  "Alimerka Oviedo Baloncesto":2243, "Grupo Caesa Seguros FC Cartagena CB":14472, "Caja Rural CB Zamora":3176,
+  "Fibwi Mallorca Bàsquet Palma":2796, "Flexicar Fuenlabrada":159, "Inveready Gipuzkoa Basket":908,
+  "Grupo Alega Cantabria":13446, "Hestia Menorca":669, "HLA Alicante":151, "Leyma Coruña":2114,
+  "Melilla Ciudad del Deporte":667, "Monbus Obradoiro":1986, "Movistar Estudiantes":147,
+  "Cloud.Gal Ourense Baloncesto":670, "Palmer Basket Mallorca Palma":15213, "Súper Agropal Palencia":1562,
+  "Grupo Ureta Tizona Burgos":13448
+};
+function teamLogo(teamName){
+  const id = TEAM_LOGOS[teamName];
+  return id ? `https://www.proballers.com/api/getTeamLogo?id=${id}&width=100` : null;
+}
+
+function attachBio(p){
+  const full = BIO_FULL[p.name];
+  const hw = BIO_HW[p.name];
+  const h = full ? full.h : (hw ? hw.h : null);
+  const a = hw ? hw.a : null;
+  p.height = h; p.age = a;
+  p.weight = full ? (full.w||null) : null;
+  p.photo = full ? full.photo : null;
+  p.birth = full ? full.birth : null;
+  p.birthplace = full ? full.birthplace : null;
+  p.nat = full ? full.nat : (p.nat || '');
+  p.bioReal = !!full;
+  const reb = (p.oreb||0)+(p.dreb||0);
+  p.pos = full ? full.pos : estimatePosition(h, p.ast, reb);
+  p.posReal = !!full;
+  return p;
+}
+
+// ---- Glosario de métricas (para las ventanas emergentes al pinchar el nombre) ----
+const METRIC_DEFS = {
+  'eFG%':'Porcentaje de tiro efectivo. Ajusta el % de tiros de campo dando más peso a los triples, ya que valen un punto más que los de 2.',
+  'TS%':'True Shooting % (tiro real). Mide la eficiencia anotadora total del jugador, contando tiros de campo y tiros libres juntos.',
+  'USG%':'Porcentaje de uso. Estima qué proporción de las posesiones de su equipo terminan con este jugador tirando, siendo bloqueado en falta o perdiendo el balón mientras está en pista.',
+  'AST%':'Porcentaje de asistencias. Estima qué porcentaje de las canastas de campo de su equipo, mientras el jugador está en pista, fueron asistidas por él.',
+  'TRB%':'Porcentaje de rebote total. Estima qué porcentaje de los rebotes disponibles (propios y del rival) captura el jugador mientras está en la cancha.',
+  'TOV%':'Porcentaje de pérdidas. Pérdidas de balón por cada 100 jugadas de ataque que termina usando el jugador (tiro, falta recibida o pérdida).',
+  'ORtg':'Rating ofensivo. Puntos que produce el jugador por cada 100 posesiones que utiliza.',
+  'DRtg':'Rating defensivo (aproximado). Estimación de puntos permitidos por cada 100 posesiones defensivas, a falta de datos de equipo rival detallados.',
+  'Net Rating':'Diferencia entre el rating ofensivo (ORtg) y el defensivo (DRtg) del jugador. Positivo es mejor.',
+  'PER':'Player Efficiency Rating simplificado. Resume en un único número la producción del jugador por minuto jugado (puntos, rebotes, asistencias, robos y tapones a favor; pérdidas y tiros fallados en contra).',
+  'eFG% (equipo)':'Igual que el eFG% de jugador pero calculado sobre el total de tiros del equipo.',
+  'TOV% (equipo)':'Pérdidas de balón del equipo por cada 100 jugadas de ataque aproximadas.',
+  'ORB%':'Tasa de rebote ofensivo propio: rebotes ofensivos entre el total de rebotes (ofensivos + defensivos) del propio equipo.',
+  'FT Rate':'Tiros libres intentados entre tiros de campo intentados. Mide cuánto genera el equipo o jugador desde la línea de personal.'
+};
+
+// ---- Datos ----
+const LEAGUES_2025_2026 = {
+  primera_feb: {
+    name:"Primera FEB", sub:"2.ª división masculina · 17 equipos", tag:"Masculina", fem:false,
+    source:"baloncestoenvivo.feb.es — Estadísticas por equipos, Liga Regular 2025/26 (medias reales tras 26-27 jornadas)",
+    leagueAvgFF:{efg:51.6, tov:14.7, orb:30.0, ftr:34.0},
+    teams:[
+      {name:"Melilla Ciudad del Deporte", ff:{efg:48.5,tov:17.1,orb:30.5,ftr:27.2,games:26,pts:75.3,ast:16,treb:33.8}},
+      {name:"Grupo Alega Cantabria", ff:{efg:51.4,tov:16.9,orb:23.8,ftr:37.9,games:26,pts:78.1,ast:15.1,treb:29.7}},
+      {name:"Grupo Ureta Tizona Burgos", ff:{efg:50.9,tov:15.7,orb:33.6,ftr:33.2,games:27,pts:81.7,ast:15.2,treb:32.6}},
+      {name:"HLA Alicante", ff:{efg:52.3,tov:13.5,orb:26.9,ftr:36.6,games:27,pts:83.0,ast:15.9,treb:31.8}},
+      {name:"Leyma Coruña", ff:{efg:54.3,tov:12.4,orb:31.8,ftr:33.8,games:27,pts:91.5,ast:19.6,treb:36.2}},
+      {name:"Alimerka Oviedo Baloncesto", ff:{efg:51.8,tov:15.1,orb:30.5,ftr:33.1,games:27,pts:82.9,ast:15.3,treb:34.7}},
+      {name:"Caja Rural CB Zamora", ff:{efg:51.6,tov:16.1,orb:30.1,ftr:39.4,games:26,pts:83.9,ast:12.6,treb:33.5}},
+      {name:"Inveready Gipuzkoa Basket", ff:{efg:51.2,tov:14.6,orb:32.3,ftr:30.7,games:26,pts:78.7,ast:15.8,treb:34.7}},
+      {name:"Fibwi Mallorca Bàsquet Palma", ff:{efg:50.6,tov:15.8,orb:31.0,ftr:32.2,games:26,pts:76.4,ast:15.3,treb:27.3}},
+      {name:"Palmer Basket Mallorca Palma", ff:{efg:46.1,tov:15.0,orb:32.1,ftr:36.5,games:26,pts:72.9,ast:13.3,treb:30.1}},
+      {name:"Grupo Caesa Seguros FC Cartagena CB", ff:{efg:48.5,tov:16.1,orb:25.2,ftr:31.0,games:26,pts:73.5,ast:13.8,treb:30.4}},
+      {name:"Hestia Menorca", ff:{efg:53.0,tov:13.5,orb:32.0,ftr:31.9,games:26,pts:81.2,ast:15.7,treb:30.7}},
+      {name:"Súper Agropal Palencia", ff:{efg:52.7,tov:12.4,orb:31.2,ftr:30.0,games:27,pts:82.8,ast:14.5,treb:33.8}},
+      {name:"Monbus Obradoiro", ff:{efg:57.5,tov:13.2,orb:29.2,ftr:35.4,games:26,pts:92.1,ast:20.2,treb:32.7}},
+      {name:"Movistar Estudiantes", ff:{efg:55.1,tov:14.0,orb:28.3,ftr:36.6,games:26,pts:84.7,ast:15.5,treb:31.6}},
+      {name:"Cloud.Gal Ourense Baloncesto", ff:{efg:48.4,tov:12.8,orb:38.2,ftr:36.4,games:26,pts:80.1,ast:14.6,treb:34.0}},
+      {name:"Flexicar Fuenlabrada", ff:{efg:53.1,tov:15.8,orb:23.4,ftr:36.6,games:27,pts:79.6,ast:16.8,treb:32.6}}
+    ],
+    rosterRows:{
+      "Melilla Ciudad del Deporte": [
+        ["Mustapha Heron",13.6,2.1,0.9,16,23.3,37.9,48.4,77.6,0.6,0.6,2.6,0.1],
+        ["Sebastian Aris Ceccardi",13.2,2.7,2.2,11,21.4,40.4,50,93.8,0.6,0.5,1.8,0],
+        ["Ivan Cruz",12.1,7.3,2.2,21,23,44.6,45.9,82.1,2,0.7,1.4,0],
+        ["Darel Poirier",11.4,7.3,0.9,15,20.9,48.4,55.7,75.7,1.1,0.2,2,0.4],
+        ["Nathan Hoover",9.1,1.6,1.4,14,23.9,29.9,39.8,78.3,0.4,0.5,1.3,0],
+        ["Sergio Rodriguez Febles",8.4,3.6,1,18,20.4,34.4,43.3,72.2,1.4,0.6,1.3,0.2],
+        ["Ludgy Debaut",7.7,5.6,0.5,18,17.2,36.4,52.7,66.1,2.4,0.4,1.3,0.2],
+        ["Roberts Stumbris",7.6,3,1.3,10,24.2,25.6,37.8,71.4,0.9,0.5,1.4,0.2],
+        ["Michael Caicedo",7.5,5,2.4,15,23.3,27.5,41.7,61.5,1.6,1.5,1.8,0.2],
+        ["Christian Diaz",7.1,1.5,2.9,31,20.3,27.1,33.1,87.6,0.5,0.8,2,0],
+        ["Pablo Cordoba",6.8,3.3,1.3,32,19.7,24.4,38,67.2,1.3,1,1.1,0],
+        ["Javier Garcia",6.3,1.8,3.1,32,20.6,32.2,33.3,73.1,0.4,0.5,1.4,0],
+        ["Nick McMullen",5.6,5.8,0.8,9,15.4,22.2,35.6,72.7,2.4,0.3,1.4,0.3],
+        ["Morgan Stilma",4.4,2.3,0.8,28,12.6,26.8,38.2,69.7,0.6,0.4,1.2,0.1],
+        ["Jeffrey Godspower",4,2.6,0.7,30,14,31.1,33.9,69.2,0.5,0.6,0.8,0.2],
+        ["Jonas Zohore Bergstedt",3.6,2.4,0.4,7,8.4,20,33.3,57.1,1,0.3,0.9,0.1],
+        ["Pavlo Krutous",2.7,1.4,0.5,25,14.4,35.3,43.6,88.9,0.5,0.2,0.4,0],
+        ["Javier Ezquerra",1.5,1.2,1.5,6,11.7,14.3,16,0,0.8,0.7,2.3,0],
+        ["Stefan Peno",1.1,0.3,0.8,12,7.9,30,17.6,100,0.1,0.1,0.9,0]
+      ],
+      "Alimerka Oviedo Baloncesto": [
+        ["Marques Townes",16.2,5.1,4.3,28,27.3,36.3,44.4,77,0.9,1.3,3,0.2],
+        ["Gregory Parham II",13.2,2.7,2.6,32,26.3,33.7,41.3,83.6,0.5,0.5,2.1,0.1],
+        ["Raul Lobaco",12,4.2,1.3,29,28.4,37.5,41.9,77.8,1.2,0.9,1.3,0.3],
+        ["Calvin Hermanson",8.1,1.7,0.6,27,15.4,31.8,34.7,79.1,0.4,0.6,0.7,0],
+        ["Alonso Faure Ribes",7.7,5.5,0.5,31,17.1,50,62.3,56.5,1.9,0.7,1.5,0.2],
+        ["Francis Nwaokorie",7.3,4.1,0.5,32,24.3,23.6,36.2,61,1.3,1,1,0.4],
+        ["Dan Duscak",6.9,2.3,3.4,32,20.9,32.2,34.1,71.3,0.6,1.3,1.4,0],
+        ["Daniil Shelist",5.7,3.1,0.8,32,17.8,28.1,51.5,75.6,1,0.5,1.1,0.1],
+        ["Robert Cosialls",5.1,5.4,1.5,31,18.6,41.2,57,66.7,2.6,0.7,0.9,0.2],
+        ["Federico Copes",3.4,1.9,0.6,23,10.1,30.4,37.7,62.5,0.3,0.3,0.6,0],
+        ["Jorge Arias Gonzalez",3,1.2,0.3,15,9,60,69.6,100,0.6,0.2,0.3,0],
+        ["Pablo Gonzalez",2.2,1,0.4,12,7.4,22.2,28,72.7,0.4,0.4,0.3,0.1]
+      ],
+      "Grupo Caesa Seguros FC Cartagena CB": [
+        ["Kobe Webster",12.1,2.2,3.1,23,26.7,33,43.1,66.1,0.3,1.6,1.6,0],
+        ["Vitor Faverani",11.6,6.6,0.9,29,23.6,28.4,51.5,77.1,1.6,0.4,2,0.7],
+        ["Sebastian Thomas",9,2.4,2.6,5,21.2,11.1,44.7,71.4,0.6,0.2,2.6,0],
+        ["Spencer Svejcar",8.9,2,1.3,31,23.3,35.4,38.2,81.1,0.6,0.7,1.4,0],
+        ["Javi Lopez",8.8,1.8,4.2,13,23.7,30,39,81.8,0.3,0.6,2.3,0],
+        ["Isaiah Stone Rivera Carroll",8.5,2.4,0.8,32,19.3,37.2,47.6,65.5,0.5,0.8,0.9,0.1],
+        ["Sediq Garuba",7.6,2.8,1,30,18,30.7,46.4,69.6,1,1,1.1,0.1],
+        ["Amari Kelly",7.2,4.4,0.7,9,19.9,29.4,49,76.9,0.4,0.7,1.7,0.2],
+        ["Adria Domenech",6.5,3.7,0.6,28,21.9,28.7,40.1,80,0.9,0.6,0.8,0.4],
+        ["Jordan Davis",6,2,3.2,5,23,0,26.7,42.9,0.2,1,2.4,0.4],
+        ["Chayce Polynice",5.5,3.7,0.7,23,16.3,25,38.3,72.2,0.9,0.3,0.7,0.9],
+        ["Alberto Martin",4.8,1.5,3.2,32,17.6,24.7,32.4,67.9,0.3,1,1.5,0],
+        ["Teemu Suokas",4.4,1.2,1.3,9,14.6,21.1,30.8,80,0.4,0.2,1.2,0.1],
+        ["Robinson Idehen",3.5,3.8,0.4,26,14.9,40,45.9,34.4,1.3,0.3,1.1,0.2],
+        ["Miguel Ayesa Rodriguez",3.3,0.8,0.2,20,8.5,40,42.6,0,0.4,0.4,0.5,0.1],
+        ["Alejandro Harguindey",2.4,1.6,0.5,26,12.7,34.4,35.1,47.8,0.5,0.4,0.6,0.3]
+      ],
+      "Caja Rural CB Zamora": [
+        ["Tyrell Roberts",16.1,2,3,23,22.4,31.5,37.2,88.6,0.3,1.1,2.3,0.1],
+        ["Josep Peris",12.5,2.3,1.8,32,19.5,32,42.5,86.1,0.3,1,1.8,0],
+        ["Colby Rogers",11,1.9,0.8,31,22.3,36.5,37.6,87.2,0.5,0.5,1.4,0.2],
+        ["Alvaro Martinez",9.1,5.3,0.9,32,21.3,41.7,50.9,79.8,1.9,0.7,0.8,0.2],
+        ["Stymir Snaer Thrastarson",8.5,2.9,1.2,31,21.1,36.2,40.1,75.8,0.7,0.7,1.4,0.2],
+        ["Omar Lo",8.2,4.3,0.6,30,21.5,12.5,51.9,58,1.3,0.7,1.6,0.1],
+        ["Joey Van Zegeren",8.2,4.8,0.5,28,19.7,0,59.5,49.2,2,0.5,1.2,1],
+        ["Jonas Paukste",5.9,4.8,0.2,31,15.7,0,50.4,75,1.7,0.1,1,0.3],
+        ["Jacob Round",4.4,1.7,0.7,29,16.5,48.3,50.6,66.7,0.4,0.3,0.6,0.1],
+        ["Toni Naspler",4,3,3.6,31,19.5,36.8,43.1,65.2,0.7,1.2,2,0.1],
+        ["Bine Prepelic",3.5,4.6,1,8,17.8,10,25.7,64.3,1.9,0.6,1,0],
+        ["Anton Bouzan",2.3,0.3,0,3,7.3,40,33.3,33.3,0,0,0,0],
+        ["David Kristensen",2,1.7,0.3,31,11.5,20,57.5,60,0.7,0.2,0.4,0.1],
+        ["Ruben Hernandez Gallardo",2,0,0,1,1,0,100,0,0,0,0,0],
+        ["Carlos Arranz Blanco",0,0,0,1,1,0,0,0,0,0,0,0],
+        ["Pedro Dario Montesdeoca Santana",0,0,0,1,1,0,0,0,0,0,0,0]
+      ],
+      "Fibwi Mallorca Bàsquet Palma": [
+        ["Brian Vazquez",13.5,1.4,1.2,32,22.1,38.8,45,81,0.3,0.8,2.1,0.1],
+        ["Pedro Bombino",11.7,5,1.7,30,22.6,0,56.7,63.3,1.5,0.9,2.3,0.4],
+        ["Lucas Capalbo",10.5,2.7,4.3,28,24,33,47.3,70.3,0.6,1.2,2.4,0],
+        ["Lysander Bracey",10.4,1.6,2.2,32,24.5,28.8,36.8,82.5,0.8,1,1.5,0],
+        ["Osvaldas Matulionis",8,2.3,1.3,29,24.7,33.1,40.1,64.5,0.7,1.1,1.2,0.1],
+        ["Jon Aramburu",7.2,5.4,1.6,31,26.2,28.4,45.1,57.5,1.3,1.4,1,0.5],
+        ["Alessandro Scariolo",5.5,1.5,2.2,22,15,34.8,43.3,76.1,0.3,0.4,1.3,0],
+        ["Laron Smith",5.4,4.5,0.4,32,17.3,0,55.1,37.7,2,0.4,0.9,0.8],
+        ["Fallou Niang",5.1,4.7,0.8,16,17.7,37.2,39.4,58.8,1.5,0.3,0.4,0.2],
+        ["Loïc Menuge",4.2,2.1,0.6,10,12.9,41.2,48.5,75,0.3,0.3,0.1,0],
+        ["Juan Bocca",3.9,1.4,0.9,30,19.3,26.6,29.5,65.5,0.5,0.9,0.8,0.1],
+        ["Patrick Spencer",3.3,1.8,0.5,4,10.5,14.3,38.5,100,0.3,0.3,1,0],
+        ["Jorge Martinez Cabezudo",1.3,1.1,1.5,15,8.8,11.1,20.6,66.7,0.3,0.6,0.7,0],
+        ["Oscar Siquier Costa",0.8,0.6,0.4,10,3.4,12.5,20,50,0.4,0.1,0,0]
+      ],
+      "Flexicar Fuenlabrada": [
+        ["Vitor Benite",16,2.6,2.4,30,27.8,43.1,45.3,83.9,0.3,0.7,2.2,0],
+        ["Ivan Aurrecoechea",13.8,8.7,2,10,24.7,0,61.9,72.3,3.4,0.1,2.2,0.2],
+        ["Mateo Diaz",13.6,4.5,4.2,32,27.6,39.2,44.3,83.9,0.4,1.2,2.3,0.1],
+        ["Alex Murphy",11.6,4,0.6,7,24.9,43.5,56.9,55.6,0.7,0.7,0.4,0.1],
+        ["Daniel Manchon",11.1,2.9,2.2,32,26.5,32.5,47.2,58,0.5,1.9,1.6,0],
+        ["Prince Ali",9.9,2.4,0.9,9,17.3,55.6,58,87.5,0.1,0.4,1.1,0.3],
+        ["Jonathan Kasibabu",8.8,4.6,1,29,21.3,27.6,54.7,65.7,1.5,0.4,1.6,0.4],
+        ["Brooks Debisschop",7.6,5.2,1.6,22,23,0,50.7,33.9,1.6,0.7,1.3,0.7],
+        ["Augusto Cesar Lima",6,5.2,1.8,6,17.7,0,45.2,50,1.3,0.7,1.5,0.3],
+        ["Cameron Martin",5.7,3.8,1,6,15.2,42.9,37.5,72.2,1.2,0.2,1.7,0],
+        ["Romaric Belemene",5.2,3.7,0.8,32,22.2,27.6,38,50,1,1,0.5,0.5],
+        ["Paul Rigot",4.9,1.7,0.2,31,14.5,33.8,39.1,84.4,0.4,0.2,0.6,0],
+        ["Alex Renfroe",4.6,3.4,4.6,23,22.3,29.4,32.7,74.3,0.7,0.8,1.5,0],
+        ["Daniil Stolbetskiy",1.5,0.6,0.2,21,4.8,25,46.7,60,0.2,0,0.3,0],
+        ["Pablo Rodriguez Pascual",1,0.4,0,12,2.6,33.3,36.4,25,0,0.1,0.7,0.1],
+        ["Lassi Nikkarinen",0.8,0.6,1,8,11.5,11.1,6.3,75,0.1,0.3,0.5,0],
+        ["Pablo Suarez",0.8,0.5,0,4,4.5,33.3,33.3,0,0.3,0,0,0],
+        ["Bruno Vidarte",0.5,0.5,0.1,15,2.9,50,33.3,50,0.1,0,0.3,0]
+      ],
+      "Inveready Gipuzkoa Basket": [
+        ["Jalen Tate",12.2,2.1,4,19,22.8,31.5,51.7,72.7,0.5,0.7,2,0.1],
+        ["Lance Terry",10.3,1.9,1.3,8,19.8,18.5,39.7,82.6,0.6,1.1,2.5,0.1],
+        ["Tanner Ngom",9.8,6.2,0.5,31,17.5,33.3,71.8,68.1,1.6,0.4,1.6,1.3],
+        ["Manex Ansorregui",9.1,5.4,1.3,32,22.8,32.1,47.7,75,1.8,1.2,0.8,0.3],
+        ["Giorgi Korsantia",9.1,7.1,1.4,32,20.7,15.8,46.6,69.8,2.8,0.9,1.8,0.2],
+        ["Tyler McGhie",8.8,2.3,0.8,30,21.1,34.8,39.7,82.8,0.3,0.5,1,0.3],
+        ["Ondrej Hanzlik",7.5,2.4,0.9,32,20.6,33.3,39,80.6,0.7,0.6,0.3,0.2],
+        ["Javier Nicolau",7.4,3.4,1.1,32,18.3,66.7,61.8,60.2,1.1,0.5,1,1],
+        ["Nacho Arroyo",7.2,2.2,3.6,30,22.8,33.1,37.4,78,0.6,0.7,1.4,0.1],
+        ["Gaizka Maiza",6.2,1.3,2.5,31,17.8,31.6,33.7,87,0.4,0.3,1.3,0.1],
+        ["Aitor Zubizarreta",3.3,1.7,1.8,23,13.7,18.6,30.7,88.5,0.5,0.3,1.4,0],
+        ["Mikel Motos",2.9,2.5,1.1,27,15,22.7,36.9,53.8,0.8,0.6,0.7,0],
+        ["Ignacio Rosa",1.9,1.6,0.1,7,8,12.5,26.7,50,0.7,0.3,0.4,0.1],
+        ["Aitor Anabitarte Soroa",0,0,0,5,1.6,0,0,0,0,0.2,0,0]
+      ],
+      "Grupo Alega Cantabria": [
+        ["Reggie Johnson",15.4,1.8,3.5,30,27.2,34.8,46,86.9,0.2,0.9,2.8,0],
+        ["Jassel Perez",15.1,4.1,3.3,9,28.2,50,50,80,0.8,1.3,2.2,0.4],
+        ["Miha Lapornik",13.3,2.7,1.8,13,27,36.7,41.5,70.4,0.2,1.2,1.5,0.1],
+        ["Dylan Addae-Wusu",12,1,0,1,17,50,44.4,50,1,3,4,0],
+        ["Jiahao Yu",9.4,5.1,1,29,22.5,22.7,52.4,82.3,1.4,0.2,1.6,0.6],
+        ["Samuel Rodriguez",9,4.3,1.5,27,24.6,34.1,41.2,81.3,0.8,0.8,1.2,0.1],
+        ["Christian Lutete",8.6,3.6,1.1,11,17.2,38.7,45.9,62.5,0.5,0.6,1.5,0],
+        ["Pablo Hernandez",7.9,2.4,0.9,31,21,41.4,44,87.8,0.5,0.4,1.1,0],
+        ["Jahvaughn Powell",7.8,1.7,2.3,31,19.7,31.7,36.8,88.1,0.4,0.9,2,0],
+        ["German Martinez",7,3.3,2.4,23,21.7,35.3,37.6,73.5,0.8,0.8,1.6,0.1],
+        ["Garmine Kande",6,3.6,0.3,32,17.6,0,60.2,68.9,1.2,0.1,0.8,0.4],
+        ["Bautista Lugarini",5.1,3.4,0.8,16,18.6,28.6,33.3,67.7,0.6,0.3,1.3,0.1],
+        ["Daniel Love",3.9,1.9,1.7,7,14.3,28.6,32.3,50,0.4,0.6,1.3,0],
+        ["Diego Alderete",3.3,4.2,0.8,25,19,21.4,47.3,35,1.5,1,0.6,0],
+        ["Devon Van Oostrum",2.7,1.1,2.2,13,12.2,15,23.9,77.8,0.1,0.2,1.4,0],
+        ["Beltran De La Llama Ruiz",1.8,0.2,0.2,5,6.8,33.3,66.7,0,0.2,0.2,0,0],
+        ["Carlos Taboada Heiskanen",0.6,0.6,0.1,17,4.1,20,23.5,50,0.3,0.1,0.3,0]
+      ],
+      "HLA Alicante": [
+        ["Jordan Walker",16.8,3,3.2,12,28,44.3,46.9,79.5,0.7,1.4,2.6,0.1],
+        ["Kevin Larsen",16.6,5.9,2.7,32,27.9,31,43.9,86,2.1,0.7,1.2,0.4],
+        ["Eddy Polanco",11.1,3,1.6,19,19.2,40.4,40.4,81.7,0.9,0.3,1.8,0.1],
+        ["Mike Torres",9.9,2.1,3.1,29,23.6,37.2,42.6,81.4,0.6,0.8,1.3,0.1],
+        ["Jordan Bone",8.8,2.1,1.3,9,22.1,46.7,38.4,28.6,0.6,0.2,0.8,0],
+        ["Sander Harrie Annie Hollanders",8.4,2.6,0.8,13,21.2,41.9,44.8,71.4,0.5,0.5,0.8,0],
+        ["Alejandro Jorda",7.3,1.3,1.2,32,17.7,40.4,42.1,96.7,0.3,0.4,1,0],
+        ["Yasiin Joseph",7,2.4,2.5,11,16.7,35.3,40.6,100,0.5,0.5,1.4,0.1],
+        ["Unai Mendicote Rubio",6.9,3.4,0.7,27,19.4,33.3,48.7,67.8,1.2,0.7,0.6,0],
+        ["Tucker Richardson",6.1,3.7,1.8,17,20.6,23.1,41.2,66.7,0.5,0.7,1,0.2],
+        ["Deng Geu",5.8,3.6,0.4,31,17.3,33.3,42.8,70,1.1,0.3,0.6,0.2],
+        ["Sebastian Aris Ceccardi",5.8,1.8,2.9,20,15.1,34.1,41.5,94.3,0.2,0.3,1.7,0],
+        ["Jean-Marc Mwema",5.2,3.5,0.8,29,19.4,30.6,35.1,90.3,0.4,0.8,0.7,0],
+        ["Brad Davison",3,0,5,1,16,50,33.3,0,0,1,1,0],
+        ["Boubacar Coulibaly",2.7,4,0.2,32,10.6,0,61.5,60.5,1.6,0.3,0.7,0.6],
+        ["Ismael Tamba",2.3,1.6,0.2,23,8,33.3,43.1,75,0.6,0,0.4,0.3],
+        ["Sergio Llorente",1.4,0.6,0.5,19,7.2,33.3,37.5,100,0.2,0.2,0.5,0]
+      ],
+      "Leyma Coruña": [
+        ["Paul Jorgensen",12.2,2.8,2,32,22.3,38.5,43.5,72.5,0.5,1,0.9,0.1],
+        ["Caio Pacheco",11.5,1.7,4.8,30,21.6,39.4,44.3,77.9,0.4,1,1.8,0],
+        ["Joe Cremo",11.4,2.7,2.1,32,22.1,37.8,40.4,87.6,0.8,0.7,1.3,0.1],
+        ["Dino Radoncic",9.3,3.9,2.1,20,20.4,36,68.9,74.5,1.2,0.5,1.5,0.2],
+        ["Yoanki Mensia",8.7,5.7,0.3,3,20.7,14.3,41.7,62.5,1.3,2.7,2.3,0],
+        ["Jacobo Diaz",8.3,3.7,0.7,28,17.6,44.4,54.4,86.2,1.1,0.6,0.5,0.2],
+        ["Ilimane Diop",8.1,5.1,0.7,32,18.9,14.3,48.9,80,1.8,0.6,1.4,0.7],
+        ["Serigne Barro",8.1,4.1,0.2,23,14.5,0,66.3,76.7,1.7,0.4,0.9,0.3],
+        ["Didac Cuevas",7.3,2.8,5.7,32,21,28.7,31.8,64,0.6,1.1,2.1,0.1],
+        ["Guillem Jou",7.1,3.9,1,32,18.7,40.6,44.4,68.9,1.2,0.7,0.3,0],
+        ["Abdou Thiam",7,5.2,0.4,32,16.7,100,51.1,81.1,1.9,0.5,0.8,0.2],
+        ["Strahinja Micovic",5.9,2.4,0.7,7,17,30.4,42.5,0,0.6,0.3,0.6,0.1],
+        ["Danilo Brnovic",4.1,1.6,0.5,31,11.6,36.7,43.6,69.7,0.7,0.2,0.3,0],
+        ["Braz Macachi",2.1,1.1,0,22,5.5,25,50,60,0.5,0,0.2,0.1],
+        ["Carlos Varela Romero",1,0.4,0.6,8,4.6,40,42.9,0,0.1,0.3,0.4,0]
+      ],
+      "Monbus Obradoiro": [
+        ["Alex Barcello",13.1,2.8,2.9,32,22.3,42.9,47.7,83.7,1,1.3,1,0.1],
+        ["Yunio Barrueta",11.7,3.8,0.8,32,22.5,40.9,47.2,87.5,1.2,0.4,0.6,0.1],
+        ["Leo Westermann",10.9,2.5,5,32,21.3,43.2,44.8,75.3,0.4,1.1,2.7,0],
+        ["Felipe Dos Anjos",10.7,4.8,0.7,32,20.8,0,70.8,63.4,2,0.5,1.2,0.6],
+        ["Diogo Brito",8.5,3,1.8,32,19,33.3,45.9,72.3,0.6,1,1,0.1],
+        ["Dejan Kravic",8.4,4.5,1.7,28,17.1,0,62,45.8,1.7,0.3,1,0.5],
+        ["Olle Lundqvist",8.1,1.9,1.4,7,13.4,25,57.1,70,0.3,0.6,1.3,0.4],
+        ["Sergi Quintela",8,2.6,2.2,32,17.8,23.4,39.1,89.5,0.6,1.9,1.2,0],
+        ["Micah Speight",7.8,2.6,2.7,11,17.4,50,43.8,82.4,0.7,1.3,2,0],
+        ["Alejandro Galan",7.5,2.9,1.2,32,19.6,32.4,50.3,80.6,0.5,0.7,0.7,0.3],
+        ["Travis Munnings",6.2,3.1,1.4,16,18.5,41.9,51.4,62.5,0.9,0.6,0.6,0.1],
+        ["Denzel Andersson",5,2.5,0.6,31,17.7,32.9,46.2,79.5,0.6,0.6,0.4,0.5],
+        ["Goran Huskic",5,1,1,1,8,0,50,50,0,1,1,0],
+        ["Aitor Etxeguren",2,1.1,0.4,21,7.7,0,81,46.7,0.5,0.3,0.2,0.2],
+        ["Tra Holder",1.8,0,1.3,4,5.3,0,14.3,62.5,0,0.3,0.5,0],
+        ["Alonso Grela Rojas",0.6,0.6,0.6,16,5.6,12.5,13.3,100,0,0.3,0.6,0]
+      ],
+      "Cloud.Gal Ourense Baloncesto": [
+        ["Rafael Lisboa",12,2.3,3.4,32,24.9,38.6,42.9,87.3,0.9,0.8,1.7,0],
+        ["Gabe Kalscheur",11.7,2.3,1.7,30,24.1,32.4,40.3,82.6,0.7,0.6,1.7,0.1],
+        ["Chinedu Okanu",8.5,4.4,0.5,32,16,0,53.9,64.8,2.2,0.5,1.3,0.4],
+        ["Sean McDonnell",8,4.6,1.5,32,26.2,37.3,42.6,68.1,1.9,0.9,1.1,0.2],
+        ["Martin Fernandez",7.8,2.1,0.7,29,12.9,29.4,41.1,79.4,0.8,0.4,0.8,0],
+        ["Isaac Vazquez Perez",7.6,3.3,3.2,32,19.5,30.1,42.3,65.7,0.9,1,0.8,0.2],
+        ["Kentwan Smith",6.2,2.9,0.8,21,18.6,42.4,44.8,22.2,1.2,0.5,1,0.2],
+        ["Carlos Jurgens",6.2,2.1,1.6,24,17.4,13,36.1,56.6,0.9,1,1,0.3],
+        ["Romaro Gill",5.6,5.6,0.2,32,16.4,0,53.5,50.9,1.8,0.3,1,0.9],
+        ["Martin Iglesias",4.7,3.6,0.7,23,11.3,0,47.3,75.5,1.7,0.3,0.7,0.2],
+        ["Diogo Seixas",3.8,1.8,0.7,29,13.6,33.3,37.4,55.6,0.4,0.3,0.7,0],
+        ["Adin Vrabac",3.6,2.4,1.1,14,18.9,20.8,25.4,44,0.6,0.5,1.4,0.1],
+        ["Sergi Huguet",2.4,1.4,0.4,30,9.8,18.9,32.9,38.9,0.8,0.3,0.4,0]
+      ],
+      "Palmer Basket Mallorca Palma": [
+        ["Philip Scrubb",15.5,2.6,6.1,14,29.4,39.8,41.8,85.7,0.3,0.9,2.4,0.4],
+        ["Hansel Atencia",12.6,1.5,3.6,28,25.4,26,33.8,89.5,0.2,1.1,2,0],
+        ["Duda Sanadze",11.5,1.9,1.2,24,24,29.1,36.1,83.6,0.4,0.9,2.4,0],
+        ["Joan Feliu",7.5,2.7,0.9,24,18.7,32.9,40.4,70.5,1,0.8,1.2,0],
+        ["Tray Hollowell",7.1,1.1,1,7,15.7,30,28.8,88.9,0.1,0.4,1,0],
+        ["Ander Urdiain",6.5,2.6,0.5,32,18.8,30.5,36.1,66.7,0.7,0.5,0.7,0],
+        ["Nuno Sa",6.4,4.1,0.5,23,20,23.9,34.4,63.6,1.7,0.3,0.8,0],
+        ["Jesus Carralero",6.4,3.3,1.1,30,19.8,29,36.3,79.7,1.3,0.6,1.1,0.6],
+        ["Matthew Frierson",6.4,1.2,1,5,17,35,38.5,83.3,0.2,0.2,0,0],
+        ["Angel Comendador Femenias",5.8,2.9,0.5,28,16.6,41.7,60.2,70.8,1.2,0.5,0.8,0.4],
+        ["Archange Izaw Bolavie",5.8,6,0.4,24,23.7,0,45.6,51.5,1.9,1.3,1.8,1.8],
+        ["Ismael Hani Massoud Rodriguez",5.8,1,0,8,17.8,38.5,40.5,100,0.3,0.8,0.8,0],
+        ["Alessandro Scariolo",4.9,1.6,1,8,11.5,33.3,35.1,83.3,0.4,0.6,1.3,0.1],
+        ["Josh Roberts",4.7,3.9,0.5,24,13.6,0,61.3,67.7,1.3,0.1,0.5,0.5],
+        ["Danny Agbelese",3.8,3,0.8,4,15,0,50,42.9,0.5,0,2,0.5],
+        ["Adrian Chapela",3.3,1.5,2,14,13.7,26.2,23.8,62.5,0.1,0.9,0.9,0.1],
+        ["Golden Dike",3.1,3.9,0.9,28,18.6,36.8,50,21.9,1.3,0.4,0.9,0.2],
+        ["Marinus N'guessan",3,3.5,1,2,17,0,25,50,1.5,0,1,2]
+      ],
+      "Grupo Ureta Tizona Burgos": [
+        ["Michael Abiodun Nugu",13.5,2.6,2.1,8,20.3,38.9,45.7,58.8,0.6,1.5,2.1,0.6],
+        ["Marquis Jackson",10.2,1.8,2.6,31,23.9,40.6,43,77.4,0.6,1,1.1,0.1],
+        ["Jan Zidek",10,2.3,0.6,31,16.8,45,52.6,82.2,0.8,0.4,0.9,0.1],
+        ["Gerard Jofresa",9.4,2.3,1.1,32,17.5,34,38.4,86.1,0.4,0.8,1.3,0],
+        ["Arnau Parrado",9.2,4.9,1.6,32,20.5,28,36.6,62.2,1.6,0.7,2.3,0.1],
+        ["Ramon Vila",8.2,3,1.2,32,19,30.8,58.5,63.9,1.4,0.4,1.1,0.3],
+        ["Felix Terins",8,2.1,2.7,28,18,41.6,46.5,86.9,0.5,0.6,1.8,0.1],
+        ["Javonte Brown",6.4,4.4,0.6,32,16.6,0,75.2,60,1.7,0.3,1,0.9],
+        ["Rodrigo Seoane",6.1,3.3,0.9,28,20.9,38,38.4,84.6,1.1,0.5,1,0.1],
+        ["Gabriel Gil Garcia",5.1,3.6,1.2,25,17.6,24.3,33.6,68.8,1.1,0.8,0.9,0.1],
+        ["Christopher Czerapowicz",4.5,4.7,1.8,6,20.8,15.8,29.7,40,1,0.7,0.7,0],
+        ["Ayoze Alonso",4.4,1.4,1.4,30,13.6,37,49.4,62.3,0.3,0.5,1.1,0],
+        ["Andy Huelves",4.3,1.6,1.4,28,12.4,20,32.5,87.8,0.6,0.6,1.1,0],
+        ["Alberto Alonso",3.7,2.9,1.2,20,14.6,26.1,39.4,62.5,0.9,0.7,0.8,0.1]
+      ],
+      "Movistar Estudiantes": [
+        ["Jayson Granger",13.1,3.3,6.1,27,26,33.9,40,81.1,0.7,0.8,1.9,0],
+        ["Omar Silverio",13.1,1.9,1.7,27,22.2,41.4,45.9,86.4,0.3,0.9,1.4,0],
+        ["Juan Vaulet",10.3,4.4,0.5,18,20.2,28,56.5,67.9,1.3,0.4,1.6,0.5],
+        ["Patricio Garino",10,2.8,0.8,30,24.1,40.4,49.8,92.9,0.6,1,0.8,0.1],
+        ["Lotanna Nwogbo",9.5,3.6,0.7,26,16.8,0,58.6,76,1.3,0.9,1.7,0.4],
+        ["Sasu Salin",9.3,2.2,1.3,27,20.3,37,38.2,81.3,0.4,0.5,0.7,0],
+        ["Tanner McGrew",8.9,4.4,1.8,32,22.8,34.8,50.2,63,1.2,0.5,1.1,0.5],
+        ["Roberts Stumbris",6.9,2.9,1,12,18.7,33.3,45,81.8,0.8,0.5,0.8,0.3],
+        ["Sergi Garcia",6.7,3.5,3.4,20,22.3,34.9,39.4,83.3,0.7,1,2.1,0.1],
+        ["Goran Filipovic",5.9,1.5,1.4,17,13.8,23.9,33.3,79.4,0.4,0.4,0.8,0],
+        ["Hansel Atencia",5,0.5,1.5,2,12,40,50,0,0.5,0.5,1,0],
+        ["Mamadou Ndieye Niang",4.7,2.3,0,6,10.7,0,81.3,33.3,1,0.2,0.8,0.7],
+        ["Amida Brimah",4.3,3,0.4,8,16.5,0,56.5,72.7,0.6,0.3,1.5,1.3],
+        ["Lucas Nicolas Giovannetti",4.2,2.2,0.6,32,15.9,34.5,48.5,72.7,1,0.6,0.5,0.3],
+        ["Asier Gonzalez Perez",3.7,3,0.2,28,11.9,0,55.2,67.2,1.1,0.3,0.8,0.1],
+        ["Hugo Lopez",2.8,3.8,0.5,17,11.1,0,59.4,37.5,1.4,0.1,0.6,0.2],
+        ["Charles Barton",2.4,0.4,0.6,9,8.7,30.8,38.1,40,0.1,0.2,0.6,0.1],
+        ["Andres Amon Bystrova",2.3,3,0,3,7,0,60,50,1,0,0.3,0],
+        ["Miguel Sola Idrisu",0.5,0.5,0.1,12,4.1,40,28.6,0,0.1,0,0.3,0]
+      ],
+      "Súper Agropal Palencia": [
+        ["Adam Kunkel",13.8,2.1,1.2,18,19.6,36.6,44.5,78.4,0.7,0.6,1.7,0.1],
+        ["Josip Vrankic",11.9,4.5,1.8,32,23.2,29.3,50.4,72.7,1.3,1,0.7,0.4],
+        ["Alec Wintering",11.5,3.2,2.6,29,20.1,34.2,47.3,76.2,0.9,1.3,1.3,0],
+        ["Ingus Jakovics",11.4,2.4,2.9,32,22.6,37.7,41,80.2,0.4,0.9,1.4,0],
+        ["Tobias Borg",9.6,2.1,2.3,30,24.3,41.9,43.9,73,0.5,0.7,1.6,0.1],
+        ["Mathieu Kamba",7.8,4.4,1.2,32,22.2,41.3,54.4,66.7,1.2,1.1,0.9,0.2],
+        ["Vasilije Vucetic",6.6,3.2,0.7,15,15.5,41.4,45.1,69.7,1.1,0.3,0.3,0.1],
+        ["Stephen Ugochukwu",6.3,3,0.3,15,13.7,0,54.2,70.8,1.1,0.3,0.6,0.3],
+        ["Alvaro Munoz",6.1,2.5,0.8,24,16.8,33.7,36.6,78.6,0.7,0.5,0.4,0.3],
+        ["Mladen Armus",5.3,5.9,0.8,32,19.8,33.3,49,35.6,2.5,0.7,1.4,0.2],
+        ["Manuel Rodriguez",3.3,1,0.5,24,10,37.5,30.8,77.8,0.4,0.4,0.3,0],
+        ["Xabier Oroz",2.8,2.9,1.3,32,15.1,20.5,40,78.6,0.8,0.9,0.6,0],
+        ["Gilad Levy",1.9,1.8,0.3,14,5.8,0,56.5,0,0.4,0,1,0.1],
+        ["Jose Maria Gonzalez",1.6,1.7,0.4,13,7.8,0,63.6,53.8,0.8,0.1,0.5,0]
+      ]
+    },
+    get players(){
+      const rows = [];
+      Object.entries(this.rosterRows).forEach(([team,list])=>{
+        list.forEach(r=>rows.push(attachBio(realFromRow(r[0],team,r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12]))));
+      });
+      // Equipos sin acceso completo a proballers.com (bloqueo anti-bot intermitente): se mantienen
+      // los jugadores confirmados por el ranking/líderes oficiales de baloncestoenvivo.feb.es / proballers
+      rows.push(attachBio(mkReal("Spencer Philip Littleson","Hestia Menorca","Escolta",32,16.9)));
+      rows.push(attachBio(mkReal("Fernando Zurbriggen","Hestia Menorca","Base",32,12.9)));
+      rows.push(attachBio(mkReal("Adams Sola Iddrisu","Hestia Menorca","Alero",32,11.75)));
+      rows.push(attachBio(mkReal("Victor Arteaga","Hestia Menorca","Pívot",32,5)));
+      rows.push(attachBio(mkReal("Thaddus McFadden","Hestia Menorca","Escolta",20,13)));
+      rows.push(attachBio(mkReal("Edgar Vicedo","Hestia Menorca","Ala-Pívot",30,8.4)));
+      rows.push(attachBio(mkReal("Jaume Lobo","Hestia Menorca","Escolta",28,8.8)));
+      rows.push(attachBio(mkReal("Jalen Cone","Hestia Menorca","Base",26,6.8)));
+      rows.push(attachBio(mkReal("Emmanuel Wembi","Hestia Menorca","Pívot",28,6.3)));
+      rows.push(attachBio(mkReal("Nico Galette","Hestia Menorca","Ala-Pívot",22,5.5)));
+      return rows;
+    },
+    playersNote:"Base de datos completa y revisada equipo a equipo: 262 jugadores reales de la temporada 2025/26. 16 de los 17 clubes tienen su plantilla 100% verificada sobre la tabla oficial completa de proballers.com (medias reales: puntos, rebotes, asistencias, minutos, % de tiro, robos, pérdidas, tapones): Melilla, Alimerka Oviedo, Súper Agropal Palencia (con Manu Rodríguez), Inveready Gipuzkoa (con Gaizka Maiza), Flexicar Fuenlabrada, Cartagena, Caja Rural CB Zamora, Grupo Alega Cantabria (con Garmine Kande), Leyma Coruña, HLA Alicante, Movistar Estudiantes, Monbus Obradoiro, Grupo Ureta Tizona Burgos, Cloud.Gal Ourense Baloncesto, Fibwi Mallorca Bàsquet Palma y Palma Basquet Mallorca. Solo Hestia Menorca (10 jugadores) se queda con datos de crónicas de prensa en vez de la tabla completa, porque proballers bloquea esa petición concreta de forma persistente. Los tiros de campo (2/3 puntos) por jugador se reconstruyen a partir de sus % reales de tiro cuando se conocen, o de una heurística basada solo en PPG cuando la fuente únicamente da puntos por partido."
+  },
+  segunda_feb:{
+    name:"Segunda FEB", sub:"3.ª división masculina · 28 equipos (2 conferencias)", tag:"Masculina", fem:false,
+    source:"baloncestoenvivo.feb.es — Estadísticas por equipos 2025/26 (muestra inicial, 2 jornadas)",
+    leagueAvgFF:{efg:41.4, tov:13.9, orb:29.1, ftr:25.5},
+    teamsNote:"Cobertura parcial: solo se listan equipos con datos oficiales confirmados en esta versión (de los 28 totales).",
+    teams:[
+      {name:"Bueno Arenas Albacete Basket", ff:{efg:40.2,tov:10.0,orb:23.4,ftr:33.8,games:2,pts:69.0}},
+      {name:"Amics Castelló", ff:{efg:39.5,tov:13.6,orb:25.6,ftr:23.2,games:2,pts:65.0}},
+      {name:"Class Basquet Sant Antoni", ff:{efg:44.6,tov:18.0,orb:38.4,ftr:19.6,games:2,pts:71.5}},
+      {name:"UEMC CBC Valladolid", ff:null},
+      {name:"Clínica Ponferrada SDP", ff:null},
+      {name:"Reina Proteínas Clavijo", ff:null},
+      {name:"CB Toledo", ff:null},
+      {name:"Castillo de Gorraiz Valle de Egüés", ff:null},
+      {name:"Cáceres Patrimonio de la Humanidad", ff:null},
+      {name:"Insolac Caja 87", ff:null},
+      {name:"Círculo Gijón", ff:null},
+      {name:"Jaén Paraíso Interior CB", ff:null},
+      {name:"CB Starlabs Morón", ff:null},
+      {name:"Biele ISB", ff:null},
+      {name:"LogroBasket Logi 7", ff:null},
+      {name:"Cultural y Deportiva Leonesa", ff:null},
+      {name:"Coto Córdoba CB", ff:null}
+    ],
+    players:[
+      {real:false, name:"Iván Aurrecoechea", team:"Cultural y Deportiva Leonesa", pos:"Pívot", nat:"🇪🇸 España", games:null, min:26, fgm:5.5,fga:10,tpm:0,tpa:0,ftm:2.5,fta:3.6,oreb:3,dreb:6.1,ast:1.3,stl:0.7,blk:1.1,tov:2},
+      {real:false, name:"Caio Pacheco", team:"CB Toledo", pos:"Base", nat:"🇧🇷 Brasil", games:null, min:28, fgm:5.5,fga:12,tpm:1.2,tpa:3.5,ftm:2.6,fta:3.2,oreb:0.5,dreb:2.7,ast:5,stl:1.1,blk:0.1,tov:2.3},
+      {real:false, name:"Sean McDonnell", team:"Insolac Caja 87", pos:"Alero", nat:"🇮🇪 Irlanda", games:null, min:27, fgm:5.5,fga:11.5,tpm:1.5,tpa:4,ftm:2.5,fta:3.2,oreb:1.1,dreb:4.5,ast:2.4,stl:1,blk:0.3,tov:1.9}
+    ],
+    playersNote:"Nombres reales citados en crónicas oficiales de la competición; sin ranking de puntos oficial confirmado aún en esta versión, por lo que su PPG también es modelado (no marcado como \"real\")."
+  },
+  lf_endesa:{
+    name:"Liga Femenina Endesa", sub:"1.ª división femenina · 16 equipos", tag:"Femenina", fem:true,
+    source:"baloncestoenvivo.feb.es — Estadísticas por equipos 2025/26 (muestra inicial de la temporada, 2-6 jornadas según equipo)",
+    leagueAvgFF:{efg:46.2, tov:14.4, orb:28.1, ftr:23.3},
+    teams:[
+      {name:"Perfumerías Avenida", ff:{efg:46.1,tov:15.5,orb:34.8,ftr:16.5,games:4,pts:67.8,ast:12,treb:33.8}},
+      {name:"Casademont Zaragoza", ff:{efg:50.1,tov:15.8,orb:26.6,ftr:21.9,games:6,pts:74.7,ast:17.8,treb:36.3}},
+      {name:"Hozono Global Jairis", ff:{efg:42.1,tov:18.0,orb:28.8,ftr:34.6,games:2,pts:60.0,ast:15,treb:26}},
+      {name:"Valencia B.C.", ff:{efg:48.2,tov:12.9,orb:30.3,ftr:24.0,games:6,pts:74.5,ast:16.7,treb:33.5}},
+      {name:"Durán Maquinaria Ensino", ff:{efg:45.6,tov:14.4,orb:33.3,ftr:23.0,games:2,pts:71.0,ast:19.5,treb:33}},
+      {name:"CAB Estepona Jardín Costa del Sol", ff:{efg:40.5,tov:12.4,orb:22.6,ftr:15.9,games:2,pts:58.5,ast:9.5,treb:26.5}},
+      {name:"Innova-TSN Leganés", ff:{efg:43.4,tov:10.4,orb:31.0,ftr:19.6,games:2,pts:72.5,ast:15.5,treb:29}},
+      {name:"Spar Girona", ff:{efg:53.7,tov:15.7,orb:17.2,ftr:30.6,games:4,pts:77.5,ast:19,treb:33.5}},
+      {name:"Baxi Ferrol", ff:null}, {name:"Cadí La Seu", ff:null}, {name:"Club Joventut Badalona", ff:null},
+      {name:"Kutxabank Araski", ff:null}, {name:"Lointek Gernika Bizkaia", ff:null}, {name:"Movistar Estudiantes", ff:null},
+      {name:"Spar Gran Canaria", ff:null}
+    ],
+    players:[
+      {real:false, name:"Iyana Martín", team:"Spar Gran Canaria", pos:"Escolta", nat:"🇪🇸 España", games:null, min:26, fgm:4.5,fga:10,tpm:1,tpa:3,ftm:2.6,fta:3.3,oreb:0.8,dreb:3,ast:2.6,stl:1.2,blk:0.2,tov:1.9},
+      {real:false, name:"Ainhoa Gervasini", team:"Casademont Zaragoza", pos:"Alero", nat:"🇪🇸 España", games:null, min:24, fgm:4,fga:8.7,tpm:0.8,tpa:2.4,ftm:1.9,fta:2.5,oreb:1,dreb:3,ast:2,stl:1,blk:0.3,tov:1.6}
+    ],
+    playersNote:"Solo se han podido confirmar con nombre y club estos dos perfiles en fuentes oficiales recientes de LF Endesa; no hay ranking de puntos con box-score público suficiente para más jugadoras en esta versión, así que sus cifras detalladas son modeladas."
+  },
+  lf_challenge:{
+    name:"LF Challenge", sub:"2.ª división femenina · 16 equipos", tag:"Femenina", fem:true,
+    source:"baloncestoenvivo.feb.es — Estadísticas por equipos, Jornada 1 2025/26 (muestra de 1 partido por equipo)",
+    leagueAvgFF:{efg:39.1, tov:15.6, orb:26.3, ftr:26.6},
+    teams:[
+      {name:"Melilla Ciudad del Deporte", ff:{efg:33.6,tov:13.0,orb:22.5,ftr:36.2,games:1,pts:51,ast:7,treb:40}},
+      {name:"Recoletas Zamora", ff:{efg:37.9,tov:14.9,orb:25.6,ftr:9.1,games:1,pts:54,ast:12,treb:39}},
+      {name:"Osés Construcción Ardoi", ff:{efg:48.4,tov:14.7,orb:21.6,ftr:27.4,games:1,pts:73,ast:8,treb:37}},
+      {name:"Lima Horta Barcelona", ff:{efg:39.3,tov:12.8,orb:29.3,ftr:15.7,games:1,pts:64,ast:17,treb:41}},
+      {name:"Alter Enersun Al-Qázeres Extremadura", ff:{efg:39.5,tov:13.0,orb:18.5,ftr:38.6,games:1,pts:56,ast:6,treb:27}},
+      {name:"Unicaja Mijas", ff:{efg:39.2,tov:18.5,orb:25.0,ftr:20.0,games:1,pts:59,ast:15,treb:40}},
+      {name:"Bosonit Unibasket", ff:{efg:30.2,tov:14.3,orb:43.8,ftr:33.3,games:1,pts:50,ast:14,treb:32}},
+      {name:"Celta Femxa Zorka", ff:{efg:44.3,tov:23.9,orb:24.3,ftr:32.1,games:1,pts:60,ast:11,treb:37}},
+      {name:"Fustecma NBF Castelló", ff:null}, {name:"Azulmarino Mallorca Palma", ff:null},
+      {name:"DOC Gardenstore Sevilla", ff:null}, {name:"Vega Lagunera Toyota Adareva", ff:null},
+      {name:"La Cordà de Paterna NB", ff:null}, {name:"Domusa Teknik ISB", ff:null}, {name:"CB Santfeliuenc", ff:null}
+    ],
+    players:[
+      {real:false, name:"Bojana Stevanovic", team:"Vega Lagunera Toyota Adareva", pos:"Ala-pívot", nat:"🇷🇸 Serbia", games:null, min:27, fgm:6.5,fga:12,tpm:0.4,tpa:1.5,ftm:3.5,fta:4.7,oreb:2.8,dreb:5.6,ast:1.8,stl:1.3,blk:0.6,tov:2.1},
+      {real:false, name:"Linda Van Schaik", team:"Bosonit Unibasket", pos:"Base", nat:"🇳🇱 Países Bajos", games:null, min:26, fgm:5,fga:11.5,tpm:1.1,tpa:3.3,ftm:3,fta:3.8,oreb:0.6,dreb:3,ast:4.9,stl:1.4,blk:0.1,tov:2.2},
+      {real:false, name:"Jessica Kelliher", team:"Celta Femxa Zorka", pos:"Pívot", nat:"🇮🇪 Irlanda", games:null, min:25, fgm:5,fga:9,tpm:0,tpa:0,ftm:2.4,fta:3.6,oreb:3.2,dreb:5.7,ast:1,stl:0.6,blk:1,tov:1.9}
+    ],
+    playersNote:"Nombres reales citados como MVP/destacadas en crónicas oficiales de la LF Challenge; el box-score detallado jugadora a jugadora no está publicado en abierto en las fuentes usadas, así que su perfil estadístico es modelado."
+  }
+};
+
+// ---- Temporada 2026/27 (aún no disputada) ----
+// Fuentes: feb.es (nota oficial "Así será la Primera FEB 2026/27", 10/06/2026) y Gigantes del Basket
+// ("Así será la Primera FEB 26/27: equipos confirmados", 11/06/2026). La liga arranca el 25/09/2026,
+// así que NO hay estadísticas de partidos reales que mostrar todavía — solo equipos confirmados y
+// los pocos fichajes/renovaciones ya anunciados de forma oficial hasta la fecha de esta consulta.
+const LEAGUES_2026_2027 = {
+  primera_feb: {
+    name:"Primera FEB", sub:"2.ª división masculina · 18 equipos (temporada 2026/27, empieza el 25/09/2026)", tag:"Masculina", fem:false,
+    source:"feb.es y Gigantes del Basket — lista oficial de los 18 equipos confirmados para 2026/27 (10-11/06/2026)",
+    leagueAvgFF:null,
+    teamsNote:"La Primera FEB vuelve a los 18 equipos. Suben desde la Liga Endesa (descendidos): Dreamland Gran Canaria y Covirán Granada. Ascienden desde Segunda FEB: Bueno Arenas Albacete Basket, Insolac Caja 87 y Coto Córdoba CB. Dejan la categoría: Melilla Ciudad del Deporte, Grupo Caesa Cartagena y Monbus Obradoiro (no continúan en Primera FEB), y Leyma Coruña asciende a la Liga Endesa tras ganar la Final Four 2025/26.",
+    teams:[
+      {name:"Dreamland Gran Canaria", ff:null},
+      {name:"Covirán Granada", ff:null},
+      {name:"Movistar Estudiantes", ff:null},
+      {name:"Alimerka Oviedo Baloncesto", ff:null},
+      {name:"Súper Agropal Palencia", ff:null},
+      {name:"Inveready Gipuzkoa Basket", ff:null},
+      {name:"Flexicar Fuenlabrada", ff:null},
+      {name:"Hestia Menorca", ff:null},
+      {name:"HLA Alicante", ff:null},
+      {name:"Caja Rural CB Zamora", ff:null},
+      {name:"Grupo Alega Cantabria", ff:null},
+      {name:"Cloud.Gal Ourense Baloncesto", ff:null},
+      {name:"Grupo Ureta Tizona Burgos", ff:null},
+      {name:"Fibwi Mallorca Bàsquet Palma", ff:null},
+      {name:"Palmer Basket Mallorca Palma", ff:null},
+      {name:"Bueno Arenas Albacete Basket", ff:null},
+      {name:"Insolac Caja 87", ff:null},
+      {name:"Coto Córdoba CB", ff:null}
+    ],
+    players:[],
+    playersNote:"El mercado de fichajes de la temporada 2026/27 sigue abierto (la Liga Regular arranca el 25 de septiembre de 2026) y la FEB/los clubes aún no han publicado plantillas completas, así que no hay estadísticas de partidos reales que mostrar todavía. Fichajes y renovaciones ya confirmados de forma oficial hasta la fecha de esta consulta: <b>Flexicar Fuenlabrada</b> ha renovado a <b>Vitor Benite</b> (escolta brasileño-italiano), <b>Mateo Díaz</b> (base) y <b>Romaric Belemene</b> (alero congoleño, 2,02 m, ex Alimerka Oviedo/Grupo Alega Cantabria), y mantiene a su entrenador Iñaki Martín. En cuanto haya más confirmaciones oficiales o empiecen a jugarse partidos, se podrá ampliar esta sección con datos reales."
+  }
+};
+
+let LEAGUES = LEAGUES_2025_2026;
+function setActiveSeason(season){
+  LEAGUES = (season === '2026-2027') ? LEAGUES_2026_2027 : LEAGUES_2025_2026;
+}
+
+let state = { unlocked:false, season:null, seasonMenuOpen:false, leagueKey:null, mode:null, entity:null, compareMode:false, compareSel:[], teamCompareMode:false, teamCompareSel:[] };
+// Aplicar biografía/posición a los jugadores estáticos (Segunda FEB, LF Endesa, LF Challenge)
+['segunda_feb','lf_endesa','lf_challenge'].forEach(k=>{ LEAGUES[k].players.forEach(attachBio); });
+let chartRefs = [];
+
+const SEASONS_WITH_DATA = ['2025-2026', '2026-2027'];
+
+function destroyCharts(){ chartRefs.forEach(c=>c.destroy()); chartRefs=[]; }
+
+function resetToLeagues(){ state.leagueKey=null; state.mode=null; state.entity=null; state.compareMode=false; state.compareSel=[]; state.teamCompareMode=false; state.teamCompareSel=[]; }
+
+function render(){
+  destroyCharts();
+  const app = document.getElementById('app');
+  app.innerHTML='';
+  app.appendChild(scoreboard());
+  if(!state.season){ app.appendChild(screenSeason()); return; }
+  if(!SEASONS_WITH_DATA.includes(state.season)){ app.appendChild(screenNoSeasonData()); return; }
+  if(!state.leagueKey){ app.appendChild(screenLeagues()); return; }
+  if(!state.mode){ app.appendChild(screenMode()); return; }
+  if(state.entity && state.entity.type==='compare'){ app.appendChild(screenCompare()); app.appendChild(footerNote()); return; }
+  if(state.entity && state.entity.type==='compareTeams'){ app.appendChild(screenCompareTeams()); app.appendChild(footerNote()); return; }
+  if(!state.entity){ app.appendChild(screenList()); return; }
+  app.appendChild(screenDetail());
+  app.appendChild(footerNote());
+}
+
+function screenSeason(){
+  const div=document.createElement('div');
+  div.innerHTML=`<h1 class="headline">FEB Stats Lab</h1><p class="sub">Elige la temporada que quieres consultar.</p>`;
+
+  const mainBtn=document.createElement('button');
+  mainBtn.className='btn league-card';
+  mainBtn.style.width='100%'; mainBtn.style.marginBottom='12px';
+  mainBtn.innerHTML=`<span class="tag">Temporada actual</span><h3>Temporada 2026-2027</h3><p>Competiciones FEB en curso.</p>`;
+  mainBtn.onclick=()=>{ state.season='2026-2027'; setActiveSeason(state.season); resetToLeagues(); render(); };
+  div.appendChild(mainBtn);
+
+  const prevBtn=document.createElement('button');
+  prevBtn.className='btn';
+  prevBtn.style.width='100%';
+  prevBtn.innerHTML=`⏮ Temporadas anteriores`;
+  prevBtn.onclick=()=>{ state.seasonMenuOpen = !state.seasonMenuOpen; render(); };
+  div.appendChild(prevBtn);
+
+  if(state.seasonMenuOpen){
+    const grid=document.createElement('div'); grid.className='grid'; grid.style.gridTemplateColumns='repeat(3,1fr)'; grid.style.marginTop='12px';
+    ['2025-2026','2024-2025','2023-2024'].forEach(s=>{
+      const b=document.createElement('button'); b.className='btn entity-card';
+      const hasData = SEASONS_WITH_DATA.includes(s);
+      b.innerHTML=`<span class="badge ${hasData?'real':''}">${hasData?'Datos disponibles':'Sin datos aún'}</span><span class="name">${s}</span>`;
+      b.onclick=()=>{ state.season=s; setActiveSeason(state.season); resetToLeagues(); render(); };
+      grid.appendChild(b);
+    });
+    div.appendChild(grid);
+  }
+  return div;
+}
+
+function screenNoSeasonData(){
+  const div=document.createElement('div');
+  div.appendChild(backBtn(()=>{state.season=null; state.seasonMenuOpen=false; render();},'← Cambiar temporada'));
+  div.innerHTML+=`<h1 class="headline">Temporada ${state.season}</h1>`;
+  const note=document.createElement('div'); note.className='note';
+  note.innerHTML = state.season==='2026-2027'
+    ? `<b>Nota:</b> la temporada 2026/27 todavía no ha comenzado (o está en pretemporada) en las fuentes usadas por esta app, así que no hay estadísticas reales que mostrar todavía. La temporada más reciente con datos completos es <b>2025-2026</b>, disponible en "Temporadas anteriores".`
+    : `<b>Nota:</b> esta versión de la app no tiene cargados datos de la temporada ${state.season}. Solo la temporada 2025-2026 está disponible por ahora.`;
+  div.appendChild(note);
+  return div;
+}
+
+function scoreboard(){
+  const div=document.createElement('div'); div.className='scoreboard';
+  const idx=!state.season?0: !state.leagueKey?1: !state.mode?2: !state.entity?3:4;
+  const steps=[
+    {label:'Temporada', go:()=>{state.season=null; state.seasonMenuOpen=false; resetToLeagues(); render();}},
+    {label:'Liga', go:()=>{resetToLeagues(); render();}},
+    {label:'Modo', go:()=>{state.mode=null; state.entity=null; state.compareMode=false; state.compareSel=[]; state.teamCompareMode=false; state.teamCompareSel=[]; render();}},
+    {label:'Selección', go:()=>{state.entity=null; render();}},
+    {label:'Ficha', go:()=>{}}
+  ];
+  const sbTitle=document.createElement('div'); sbTitle.className='sb-title'; sbTitle.textContent='FEB Stats Lab';
+  const stepsWrap=document.createElement('div'); stepsWrap.className='sb-steps';
+  steps.forEach((s,i)=>{
+    const btn=document.createElement('button');
+    btn.className='sb-step'+(i===idx?' active':'');
+    btn.textContent=(i+1)+'. '+s.label;
+    btn.style.cursor = i<idx ? 'pointer' : 'default';
+    btn.style.font = 'inherit';
+    if(i<idx) btn.onclick=s.go; // solo se puede saltar a pasos ya completados, no adelante
+    stepsWrap.appendChild(btn);
+  });
+  div.appendChild(sbTitle); div.appendChild(stepsWrap);
+  return div;
+}
+
+function footerNote(){
+  const div=document.createElement('div'); div.className='footer-note';
+  div.innerHTML=`<b>Fuentes:</b> baloncestoenvivo.feb.es (medias oficiales de equipo y ranking de puntos), feb.es (composición de competiciones), proballers.com (contexto de plantillas).
+  Los <b>4 Factores de Dean Oliver</b> de equipo se calculan directamente de las medias reales publicadas (eFG%, TOV%, tasa de rebote ofensivo propio y FT Rate); no incluyen ajuste por estadística del rival porque esa granularidad no está publicada en abierto.
+  Las métricas avanzadas de jugador (eFG%, TS%, USG%, ORtg/DRtg, Net Rating, PER, AST%, TRB%, TOV%) se calculan con fórmulas estándar sobre un perfil de caja que combina, cuando existe, el PPG real del ranking oficial con el resto de variables modeladas — se indica con la etiqueta <b>real</b> quién tiene puntos confirmados.`;
+  return div;
+}
+
+function screenLeagues(){
+  const div=document.createElement('div');
+  div.appendChild(backBtn(()=>{state.season=null; state.seasonMenuOpen=false; render();},'← Cambiar temporada'));
+  div.innerHTML+=`<h1 class="headline">Elige una liga FEB</h1><p class="sub">Temporada <b>${state.season}</b>. Estadística avanzada de equipos y jugadores de las competiciones FEB, con 4 Factores de Dean Oliver y métricas tipo eFG%, TS%, USG%, ORtg/DRtg, PER y más.</p>`;
+  const grid=document.createElement('div'); grid.className='grid leagues';
+  Object.entries(LEAGUES).forEach(([key,l])=>{
+    const c=document.createElement('button'); c.className='btn league-card';
+    c.innerHTML=`<span class="tag ${l.fem?'fem':''}">${l.tag}</span><h3>${l.name}</h3><p>${l.sub}</p>`;
+    c.onclick=()=>{state.leagueKey=key; state.compareMode=false; state.compareSel=[]; state.teamCompareMode=false; state.teamCompareSel=[]; render();};
+    grid.appendChild(c);
+  });
+  div.appendChild(grid);
+  return div;
+}
+
+function screenMode(){
+  const div=document.createElement('div');
+  div.appendChild(backBtn(()=>{state.leagueKey=null; state.compareMode=false; state.compareSel=[]; state.teamCompareMode=false; state.teamCompareSel=[]; render();},'← Cambiar liga'));
+  const l=LEAGUES[state.leagueKey];
+  const head=document.createElement('div');
+  head.innerHTML=`<h1 class="headline">${l.name}</h1><p class="sub">¿Jugadores o equipos?</p>`;
+  div.appendChild(head);
+  const grid=document.createElement('div'); grid.className='grid mode';
+  [{key:'jugadores',icon:'🏀',title:'Jugadores',desc:'Perfiles individuales y métricas avanzadas.'},
+   {key:'equipos',icon:'🛡️',title:'Equipos',desc:'4 Factores de Dean Oliver por club.'}].forEach(m=>{
+    const c=document.createElement('button'); c.className='btn mode-card';
+    c.innerHTML=`<span class="icon">${m.icon}</span><h3>${m.title}</h3><p>${m.desc}</p>`;
+    c.onclick=()=>{state.mode=m.key; state.compareMode=false; state.compareSel=[]; state.teamCompareMode=false; state.teamCompareSel=[]; render();};
+    grid.appendChild(c);
+  });
+  div.appendChild(grid);
+  return div;
+}
+
+function ffColor(val,type){
+  // devuelve color de fondo para heatmap (verde=mejor, rojo=peor) según el tipo de métrica
+  const good = type==='tov' ? (100-val) : val; // menos pérdidas es mejor
+  const scales = {efg:[35,60], tov:[60,90] /*ya invertido*/, orb:[15,40], ftr:[10,42]};
+  const [lo,hi] = type==='tov' ? [10,40] : scales[type];
+  let pct;
+  if(type==='tov'){ pct = 1-((val-lo)/(hi-lo)); } else { pct = (val-lo)/(hi-lo); }
+  pct = Math.max(0,Math.min(1,pct));
+  const hue = 4 + pct*130; // rojo -> verde
+  return `hsl(${hue},60%,42%)`;
+}
+
+function heatmapTable(teams){
+  const rows = teams.filter(t=>t.ff);
+  if(!rows.length) return '<div class="note">Todavía no hay datos de los 4 Factores confirmados para los equipos de esta liga en esta versión.</div>';
+  let html = `<div class="heatmap"><table><thead><tr><th>Equipo</th><th>${metricLabel('eFG% (equipo)','eFG%')}</th><th>${metricLabel('TOV% (equipo)','TOV%')}</th><th>${metricLabel('ORB%','ORB%*')}</th><th>${metricLabel('FT Rate')}</th><th>PJ</th></tr></thead><tbody>`;
+  rows.sort((a,b)=>b.ff.efg-a.ff.efg).forEach(t=>{
+    html+=`<tr>
+      <td class="teamname">${t.name}</td>
+      <td style="background:${ffColor(t.ff.efg,'efg')}">${t.ff.efg.toFixed(1)}%</td>
+      <td style="background:${ffColor(t.ff.tov,'tov')}">${t.ff.tov.toFixed(1)}%</td>
+      <td style="background:${ffColor(t.ff.orb,'orb')}">${t.ff.orb.toFixed(1)}%</td>
+      <td style="background:${ffColor(t.ff.ftr,'ftr')}">${t.ff.ftr.toFixed(1)}%</td>
+      <td class="teamname">${t.ff.games}</td>
+    </tr>`;
+  });
+  html+='</tbody></table></div><div class="note"><b>Mapa de calor:</b> verde = mejor valor relativo dentro de la muestra actual, rojo = peor. *ORB% aquí es una tasa de rebote ofensivo propio (OREB del equipo entre sus rebotes totales), no un ORB% ajustado al rival, porque esa granularidad no está publicada en abierto. Pincha el nombre de cualquier métrica de la cabecera para ver qué significa.</div>';
+  return html;
+}
+
+function screenList(){
+  const div=document.createElement('div');
+  div.appendChild(backBtn(()=>{state.mode=null; state.compareMode=false; state.compareSel=[]; state.teamCompareMode=false; state.teamCompareSel=[]; render();},'← Cambiar modo'));
+  const l=LEAGUES[state.leagueKey];
+  const head=document.createElement('div');
+  head.innerHTML=`<h1 class="headline">${state.mode==='jugadores'?'Jugadores':'Equipos'} · ${l.name}</h1>`;
+  div.appendChild(head);
+
+  const noteWrap = document.createElement('div');
+  const srcNote=document.createElement('div'); srcNote.className='note confirmed';
+  srcNote.innerHTML=`<b>Fuente de datos:</b> ${l.source}`;
+  noteWrap.appendChild(srcNote);
+  if(state.mode==='jugadores' && l.playersNote){
+    const n=document.createElement('div'); n.className='note'; n.innerHTML=`<b>Nota:</b> ${l.playersNote}`; noteWrap.appendChild(n);
+  }
+  if(state.mode==='equipos' && l.teamsNote){
+    const n=document.createElement('div'); n.className='note'; n.innerHTML=`<b>Nota:</b> ${l.teamsNote}`; noteWrap.appendChild(n);
+  }
+  div.appendChild(noteWrap);
+
+  if(state.mode==='equipos'){
+    const hmTitle=document.createElement('h4'); hmTitle.className='section-title'; hmTitle.textContent='Mapa de calor · 4 Factores de Dean Oliver (equipo)';
+    div.appendChild(hmTitle);
+    const hm=document.createElement('div'); hm.innerHTML=heatmapTable(l.teams); div.appendChild(hm);
+
+    const avgFF=leagueAvgFFComputed(l.teams);
+    if(avgFF){
+      const avgTeam=document.createElement('div'); avgTeam.className='stat-grid'; avgTeam.style.marginTop='14px';
+      avgTeam.innerHTML=`
+        <div class="stat-cell"><div class="val">${avgFF.efg.toFixed(1)}</div><div class="lab">Media eFG%</div></div>
+        <div class="stat-cell"><div class="val">${avgFF.tov.toFixed(1)}</div><div class="lab">Media TOV%</div></div>
+        <div class="stat-cell"><div class="val">${avgFF.orb.toFixed(1)}</div><div class="lab">Media ORB%*</div></div>
+        <div class="stat-cell"><div class="val">${avgFF.ftr.toFixed(1)}</div><div class="lab">Media FT Rate</div></div>`;
+      div.appendChild(avgTeam);
+      const avgNote=document.createElement('div'); avgNote.className='note';
+      avgNote.innerHTML='<b>Media de la liga:</b> se muestra siempre arriba para poder comparar cada equipo con el conjunto de la competición (media aritmética simple). Se repite en la ficha de cada equipo, en el gráfico de barras de los 4 Factores.';
+      div.appendChild(avgNote);
+    }
+
+    const teamCompareWrap=document.createElement('div'); teamCompareWrap.style.marginTop='16px'; teamCompareWrap.style.display='flex'; teamCompareWrap.style.gap='10px'; teamCompareWrap.style.flexWrap='wrap';
+    teamCompareWrap.innerHTML=`<button id="teamCompareToggle" class="btn" style="flex-shrink:0;padding:11px 16px;${state.teamCompareMode?'border-color:var(--amber);color:var(--amber);':''}">⇄ ${state.teamCompareMode?'Cancelar comparación':'Comparar equipos'}</button>`;
+    div.appendChild(teamCompareWrap);
+
+    if(state.teamCompareMode){
+      const tbar=document.createElement('div'); tbar.id='teamCompareBar'; tbar.className='note confirmed'; tbar.style.display='flex'; tbar.style.alignItems='center'; tbar.style.gap='12px'; tbar.style.flexWrap='wrap';
+      div.appendChild(tbar);
+    }
+  }
+
+  if(state.mode==='jugadores' && l.players.length===0){
+    const empty=document.createElement('div'); empty.className='note';
+    empty.innerHTML = `<b>Todavía no hay jugadores/as cargados para esta liga en esta temporada.</b> ${l.playersNote||''}`;
+    div.appendChild(empty);
+  } else if(state.mode==='jugadores'){
+    const avg=leaguePlayerAvg(l.players);
+    const avgWrap=document.createElement('div'); avgWrap.className='stat-grid'; avgWrap.style.marginTop='4px';
+    avgWrap.innerHTML=`
+      <div class="stat-cell"><div class="val">${avg.pts.toFixed(1)}</div><div class="lab">Media PTS</div></div>
+      <div class="stat-cell"><div class="val">${avg.trb.toFixed(1)}</div><div class="lab">Media REB</div></div>
+      <div class="stat-cell"><div class="val">${avg.ast.toFixed(1)}</div><div class="lab">Media AST</div></div>
+      <div class="stat-cell"><div class="val">${avg.efg.toFixed(1)}</div><div class="lab">Media eFG%</div></div>
+      <div class="stat-cell"><div class="val">${avg.per.toFixed(1)}</div><div class="lab">Media PER</div></div>`;
+    div.appendChild(avgWrap);
+    const avgNote=document.createElement('div'); avgNote.className='note';
+    avgNote.innerHTML=`<b>Media de la liga (${l.players.length} jugadores/as cargados):</b> se muestra siempre arriba para poder comparar. Cada ficha individual repite esta comparación en la diana y en las métricas avanzadas.`;
+    div.appendChild(avgNote);
+
+    const searchWrap=document.createElement('div'); searchWrap.style.marginTop='16px'; searchWrap.style.display='flex'; searchWrap.style.gap='10px'; searchWrap.style.flexWrap='wrap';
+    searchWrap.innerHTML=`
+      <input id="playerSearch" type="text" placeholder="Buscar jugador/a por nombre o equipo..." style="flex:1;min-width:200px;padding:11px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;outline:none;">
+      <button id="compareToggle" class="btn" style="flex-shrink:0;padding:11px 16px;${state.compareMode?'border-color:var(--amber);color:var(--amber);':''}">⇄ ${state.compareMode?'Cancelar comparación':'Comparar jugadores'}</button>
+    `;
+    div.appendChild(searchWrap);
+
+    if(state.compareMode){
+      const bar=document.createElement('div'); bar.id='compareBar'; bar.className='note confirmed'; bar.style.display='flex'; bar.style.alignItems='center'; bar.style.gap='12px'; bar.style.flexWrap='wrap';
+      div.appendChild(bar);
+    }
+  }
+
+  const grid=document.createElement('div'); grid.className='grid list'; grid.style.marginTop='16px'; grid.id='listGrid';
+  if(state.mode==='jugadores'){
+    renderPlayerCards(grid, l.players);
+  } else {
+    renderTeamCards(grid, l.teams, l);
+  }
+  div.appendChild(grid);
+
+  if(state.mode==='jugadores'){
+    setTimeout(()=>{
+      const input=document.getElementById('playerSearch');
+      if(input){
+        input.oninput=()=>{
+          const q=input.value.trim().toLowerCase();
+          const filtered = !q ? l.players : l.players.filter(p=>p.name.toLowerCase().includes(q) || p.team.toLowerCase().includes(q));
+          const g=document.getElementById('listGrid');
+          g.innerHTML='';
+          if(!filtered.length){ g.innerHTML='<div class="note">No hay jugadores/as que coincidan con esa búsqueda.</div>'; return; }
+          renderPlayerCards(g, filtered);
+        };
+      }
+      const toggleBtn=document.getElementById('compareToggle');
+      if(toggleBtn){
+        toggleBtn.onclick=()=>{
+          state.compareMode = !state.compareMode;
+          if(!state.compareMode) state.compareSel=[];
+          render();
+        };
+      }
+      updateCompareBarContent();
+    },0);
+  }
+  if(state.mode==='equipos'){
+    setTimeout(()=>{
+      const toggleBtn=document.getElementById('teamCompareToggle');
+      if(toggleBtn){
+        toggleBtn.onclick=()=>{
+          state.teamCompareMode = !state.teamCompareMode;
+          if(!state.teamCompareMode) state.teamCompareSel=[];
+          render();
+        };
+      }
+      updateTeamCompareBarContent(l);
+    },0);
+  }
+  return div;
+}
+
+function renderPlayerCards(grid, players){
+  players.forEach(pl=>{
+    const c=document.createElement('button'); c.className='btn entity-card';
+    const selected = state.compareMode && state.compareSel.includes(pl);
+    if(selected) c.style.borderColor='var(--amber)', c.style.background='rgba(242,169,59,.08)';
+    const avatar = pl.photo ? `<img src="${pl.photo}" alt="" style="width:38px;height:38px;border-radius:8px;object-fit:cover;flex-shrink:0;">` : `<div style="width:38px;height:38px;border-radius:8px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:13px;color:var(--ink-dim);flex-shrink:0;">${pl.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>`;
+    const logo = teamLogo(pl.team);
+    c.innerHTML=`<div style="display:flex;gap:10px;align-items:center;">${avatar}<div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:0;"><span class="badge ${pl.real?'real':''}">${state.compareMode ? (selected?'✓ Seleccionado':'Pinchar para elegir') : (pl.real?'PTS real':pl.pos)}</span><span class="name">${pl.name}</span></div></div><span class="meta" style="display:flex;align-items:center;gap:6px;margin-top:6px;">${logo?`<img src="${logo}" alt="" style="width:16px;height:16px;object-fit:contain;">`:''}${pl.team}${pl.nat?' · '+pl.nat:''}</span>`;
+    c.onclick=()=>{
+      if(state.compareMode){
+        const idx = state.compareSel.indexOf(pl);
+        if(idx>-1){ state.compareSel.splice(idx,1); }
+        else {
+          if(state.compareSel.length>=2) state.compareSel.shift();
+          state.compareSel.push(pl);
+        }
+        render();
+      } else {
+        state.entity={type:'jugador',data:pl}; render();
+      }
+    };
+    grid.appendChild(c);
+  });
+}
+
+function updateCompareBarContent(){
+  const bar=document.getElementById('compareBar');
+  if(!bar) return;
+  const sel=state.compareSel;
+  if(!sel.length){
+    bar.innerHTML='<span>Pincha en dos jugadores/as de la lista para seleccionarlos y compararlos.</span>';
+  } else {
+    bar.innerHTML = `<span><b>Seleccionados (${sel.length}/2):</b> ${sel.map(p=>p.name).join(' vs. ')}</span>
+      ${sel.length===2 ? `<button class="btn" style="border-color:var(--amber);color:var(--amber);padding:8px 14px;" id="doCompareBtn">Comparar →</button>` : ''}
+      ${sel.length>0 ? `<button class="back-btn" id="clearCompareBtn" style="margin:0;">Vaciar selección</button>` : ''}`;
+    const doBtn=document.getElementById('doCompareBtn');
+    if(doBtn) doBtn.onclick=()=>{ state.entity={type:'compare', data:[sel[0],sel[1]]}; render(); };
+    const clearBtn=document.getElementById('clearCompareBtn');
+    if(clearBtn) clearBtn.onclick=()=>{ state.compareSel=[]; render(); };
+  }
+}
+
+function renderTeamCards(grid, teams, league){
+  teams.forEach(t=>{
+    const c=document.createElement('button'); c.className='btn entity-card';
+    const logo=teamLogo(t.name);
+    const selected = state.teamCompareMode && state.teamCompareSel.includes(t);
+    if(selected) c.style.borderColor='var(--amber)', c.style.background='rgba(242,169,59,.08)';
+    c.innerHTML=`<div style="display:flex;align-items:center;gap:10px;">${logo?`<img src="${logo}" alt="" style="width:34px;height:34px;object-fit:contain;flex-shrink:0;">`:''}<div style="display:flex;flex-direction:column;gap:6px;flex:1;"><span class="badge ${state.teamCompareMode ? (selected?'real':'') : (t.ff?'real':'')}">${state.teamCompareMode ? (selected?'✓ Seleccionado':'Pinchar para elegir') : (t.ff?'4F confirmados':'sin datos')}</span><span class="name">${t.name}</span></div></div><span class="meta">${league.name}</span>`;
+    c.onclick=()=>{
+      if(state.teamCompareMode){
+        const idx = state.teamCompareSel.indexOf(t);
+        if(idx>-1){ state.teamCompareSel.splice(idx,1); }
+        else {
+          if(state.teamCompareSel.length>=2) state.teamCompareSel.shift();
+          state.teamCompareSel.push(t);
+        }
+        render();
+      } else {
+        state.entity={type:'equipo',data:{team:t,league:league}}; render();
+      }
+    };
+    grid.appendChild(c);
+  });
+}
+
+function updateTeamCompareBarContent(league){
+  const bar=document.getElementById('teamCompareBar');
+  if(!bar) return;
+  const sel=state.teamCompareSel;
+  if(!sel.length){
+    bar.innerHTML='<span>Pincha en dos equipos de la lista para seleccionarlos y compararlos.</span>';
+  } else {
+    bar.innerHTML = `<span><b>Seleccionados (${sel.length}/2):</b> ${sel.map(t=>t.name).join(' vs. ')}</span>
+      ${sel.length===2 ? `<button class="btn" style="border-color:var(--amber);color:var(--amber);padding:8px 14px;" id="doTeamCompareBtn">Comparar →</button>` : ''}
+      ${sel.length>0 ? `<button class="back-btn" id="clearTeamCompareBtn" style="margin:0;">Vaciar selección</button>` : ''}`;
+    const doBtn=document.getElementById('doTeamCompareBtn');
+    if(doBtn) doBtn.onclick=()=>{ state.entity={type:'compareTeams', data:[{team:sel[0],league},{team:sel[1],league}]}; render(); };
+    const clearBtn=document.getElementById('clearTeamCompareBtn');
+    if(clearBtn) clearBtn.onclick=()=>{ state.teamCompareSel=[]; render(); };
+  }
+}
+
+function backBtn(fn,label){
+  const b=document.createElement('button'); b.className='back-btn'; b.textContent=label; b.onclick=fn; return b;
+}
+
+function bar(val,max,decimals=1){
+  const pct=Math.max(4,Math.min(100,(val/max)*100));
+  return `<div class="bar-wrap"><div class="bar"><i style="width:${pct}%"></i></div><span class="num">${val.toFixed(decimals)}</span></div>`;
+}
+
+// ---- Nombre de métrica clicable + modal de glosario ----
+function metricLabel(key, displayText){
+  const safe = key.replace(/'/g,"\\'");
+  return `<span class="metric-link" onclick="openMetricModal('${safe}')">${displayText||key}</span>`;
+}
+function openMetricModal(key){
+  const def = METRIC_DEFS[key] || 'Definición no disponible.';
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.onclick = (e)=>{ if(e.target===overlay) overlay.remove(); };
+  overlay.innerHTML = `<div class="modal-box"><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button><h4>${key}</h4><p>${def}</p></div>`;
+  document.body.appendChild(overlay);
+}
+
+// ---- Mapa de calor por zonas de tiro (ILUSTRATIVO) ----
+// FEB no publica coordenadas de tiro en abierto en estas fuentes, así que esto NO son datos reales
+// de tracking; es una distribución de zonas modelada a partir del split real 2P/3P del jugador/a
+// (más 3PA -> más peso en zonas exteriores; más 2PA -> más peso en pintura/media distancia).
+function shotZoneHTML(pl){
+  const tpShare = pl.tpa/(pl.fga||1);
+  const zones = [
+    {label:'Pintura', pct: (1-tpShare)*0.55, color:'#D6483F'},
+    {label:'Media distancia', pct:(1-tpShare)*0.45, color:'#F2A93B'},
+    {label:'Triple esquina', pct: tpShare*0.35, color:'#36C9B0'},
+    {label:'Triple arco superior', pct: tpShare*0.65, color:'#2F8FE0'}
+  ];
+  const total = zones.reduce((s,z)=>s+z.pct,0)||1;
+  zones.forEach(z=>z.pct = z.pct/total*100);
+  const legend = zones.map(z=>`<div class="zrow"><span class="zswatch" style="background:${z.color}"></span>${z.label}<span class="znum">${z.pct.toFixed(0)}%</span></div>`).join('');
+  return `<div class="court-wrap">
+    <svg viewBox="0 0 300 260" xmlns="http://www.w3.org/2000/svg">
+      <rect x="4" y="4" width="292" height="252" fill="none" stroke="#2A3140" stroke-width="2" rx="6"/>
+      <circle cx="150" cy="230" r="46" fill="${zones[0].color}" opacity="${0.25+zones[0].pct/140}"/>
+      <rect x="90" y="150" width="120" height="80" fill="${zones[1].color}" opacity="${0.18+zones[1].pct/160}"/>
+      <path d="M20,230 A200,200 0 0 1 60,60" fill="none" stroke="${zones[2].color}" stroke-width="34" opacity="${0.25+zones[2].pct/140}"/>
+      <path d="M280,230 A200,200 0 0 0 240,60" fill="none" stroke="${zones[2].color}" stroke-width="34" opacity="${0.25+zones[2].pct/140}"/>
+      <path d="M55,80 A140,140 0 0 1 245,80" fill="none" stroke="${zones[3].color}" stroke-width="30" opacity="${0.25+zones[3].pct/140}"/>
+      <circle cx="150" cy="230" r="8" fill="#ECEFF4"/>
+      <line x1="115" y1="230" x2="185" y2="230" stroke="#ECEFF4" stroke-width="3"/>
+    </svg>
+    <div class="zone-legend">${legend}</div>
+  </div>
+  <div class="note"><b>Nota:</b> mapa <b>ilustrativo</b>. FEB no publica en abierto coordenadas de tiro (x,y) por jugador/a en estas fuentes; la distribución de zonas está modelada a partir del reparto real de intentos de 2 y de 3 de este jugador/a, no de datos de seguimiento óptico reales.</div>`;
+}
+
+// ---- Quintetos / lineups (ILUSTRATIVO) ----
+// FEB no publica en abierto el play-by-play con sustituciones ni el +/- por combinación de 5 jugadores,
+// así que esto es una simulación con fines demostrativos, no datos reales de quinteto.
+// ---- Distribución de minutos por jugador (REAL, temporada 2025/26) ----
+function minutesColor(min){
+  if(min<8) return '#D6483F';       // rojo: <8
+  if(min<=14) return '#E8590C';     // naranja: 9-14
+  if(min<=19) return '#F0C419';     // amarillo: 15-19
+  if(min<=25) return '#2F8FE0';     // azul: 20-25
+  return '#3FB950';                 // verde: 26+
+}
+function minutesChartHTML(roster){
+  if(!roster.length) return '<div class="note">Todavía no hay jugadores/as cargados de este club para mostrar la distribución de minutos.</div>';
+  const withMin = roster.filter(p=>p.min);
+  const avgMin = withMin.length ? withMin.reduce((s,p)=>s+p.min,0)/withMin.length : 0;
+  const canvasWidth = Math.max(500, withMin.length*55);
+  return `
+    <div class="chart-box">
+      <div style="text-align:center;margin-bottom:10px;">
+        <span class="illustrative-tag" style="background:var(--amber);">Media del equipo: ${avgMin.toFixed(1)} min/partido</span>
+      </div>
+      <div style="overflow-x:auto;overflow-y:hidden;">
+        <div style="width:${canvasWidth}px;height:340px;">
+          <canvas id="minutesChart"></canvas>
+        </div>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:12px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--ink-dim);">
+        <span><i style="display:inline-block;width:10px;height:10px;background:#D6483F;border-radius:2px;margin-right:4px;"></i>&lt;8 min</span>
+        <span><i style="display:inline-block;width:10px;height:10px;background:#E8590C;border-radius:2px;margin-right:4px;"></i>9-14 min</span>
+        <span><i style="display:inline-block;width:10px;height:10px;background:#F0C419;border-radius:2px;margin-right:4px;"></i>15-19 min</span>
+        <span><i style="display:inline-block;width:10px;height:10px;background:#2F8FE0;border-radius:2px;margin-right:4px;"></i>20-25 min</span>
+        <span><i style="display:inline-block;width:10px;height:10px;background:#3FB950;border-radius:2px;margin-right:4px;"></i>26+ min</span>
+      </div>
+      <div class="note confirmed" style="margin-top:12px;"><b>Dato real:</b> minutos por partido de la temporada 2025/26, de la misma fuente que el resto de la plantilla (proballers.com / ranking oficial de baloncestoenvivo.feb.es). Desliza horizontalmente si la plantilla no cabe entera en pantalla.</div>
+    </div>
+  `;
+}
+
+function lineupsHTML(teamName, roster){
+  const names = roster.length ? roster.map(p=>p.name) : ['Base (genérico)','Escolta (genérico)','Alero (genérico)','Ala-pívot (genérico)','Pívot (genérico)'];
+  while(names.length<5) names.push(['Rotación A','Rotación B','Rotación C','Rotación D','Rotación E'][names.length]);
+  // combinaciones simuladas deterministas (semilla en el nombre del equipo, para que sea estable)
+  let seed = teamName.split('').reduce((a,c)=>a+c.charCodeAt(0),0);
+  function rnd(){ seed = (seed*9301+49297)%233280; return seed/233280; }
+  const combos = [];
+  for(let i=0;i<4;i++){
+    const shuffled = [...names].sort(()=>rnd()-0.5).slice(0,5);
+    const net = ((rnd()*24)-10).toFixed(1);
+    const minShare = (6+rnd()*9).toFixed(1);
+    combos.push({five:shuffled, net, min:minShare});
+  }
+  combos.sort((a,b)=>b.net-a.net);
+  let rows = combos.map(c=>`<tr><td>${c.five.join(', ')}</td><td>${c.min}%</td><td class="${c.net>=0?'pos':'neg'}">${c.net>=0?'+':''}${c.net}</td></tr>`).join('');
+  return `<table class="lineup-table"><thead><tr><th>Quinteto (nombre y apellidos)</th><th>% min. jugados juntos</th><th>Net Rating</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="note"><b>Nota:</b> tabla <b>ilustrativa/simulada</b>. FEB no publica en abierto el play-by-play con marcas de sustitución ni el +/- por combinación de 5 jugadores en estas fuentes, así que no se puede calcular un Net Rating real por quinteto. Los nombres de los 5 jugadores de cada combinación sí son reales (de la plantilla cargada de este club); lo simulado es qué 5 concretos coinciden en pista y su Net Rating.</div>`;
+}
+
+// ---- Partido real con +/- por jugadora (REAL) ----
+function realGameHTML(g, focusTeam){
+  const rows = g.players.filter(p=>p.team===focusTeam).map(p=>
+    `<tr><td class="pname">${p.name}</td><td>${p.min}</td><td>${p.pts}</td><td>${p.fg} (${p.fgpct}%)</td><td>${p.reb}</td><td>${p.ast}</td><td>${p.stl}</td><td>${p.tov}</td><td class="${p.pm>=0?'pm-pos':'pm-neg'}">${p.pm>=0?'+':''}${p.pm}</td></tr>`
+  ).join('');
+  return `
+  <div class="chart-box"><canvas id="quarterChart"></canvas></div>
+  <table class="pm-table"><thead><tr><th>Jugadora</th><th>Min</th><th>Pts</th><th>TC</th><th>Reb</th><th>Ast</th><th>Rob</th><th>Perd</th><th>+/-</th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="note confirmed"><b>Dato real:</b> box-score completo del partido ${g.home.name} ${g.home.score} - ${g.away.score} ${g.away.name} (${g.comp}, ${g.date}), incluyendo la columna +/- oficial por jugadora. Fuente: ${g.source}</div>`;
+}
+
+
+function screenCompare(){
+  const div=document.createElement('div');
+  div.appendChild(backBtn(()=>{state.entity=null; render();},'← Volver al listado (comparar otros/as)'));
+  const [p1,p2]=state.entity.data;
+  const a1=computeAdvanced(p1), a2=computeAdvanced(p2);
+  const lgAvg=leaguePlayerAvg(LEAGUES[state.leagueKey].players);
+  const bioPhoto=(p)=> p.photo ? `<img class="bio-photo" src="${p.photo}" alt="${p.name}">` : `<div class="bio-photo-fallback">${p.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>`;
+
+  function row(label, key, v1, v2, higherIsBetter=true, suffix='', decimals=1){
+    const d1=v1, d2=v2;
+    let c1='tie', c2='tie';
+    if(Math.abs(d1-d2) > 0.05){
+      const p1wins = higherIsBetter ? d1>d2 : d1<d2;
+      c1 = p1wins?'win':'lose'; c2 = p1wins?'lose':'win';
+    }
+    const lbl = key ? metricLabel(key, label) : label;
+    return `<tr><td class="metric-name">${lbl}</td><td class="${c1}">${d1.toFixed(decimals)}${suffix}</td><td class="${c2}">${d2.toFixed(decimals)}${suffix}</td></tr>`;
+  }
+
+  const sheet=document.createElement('div'); sheet.className='sheet';
+  sheet.innerHTML=`
+    <div class="sheet-head">
+      <div class="sheet-eyebrow">${LEAGUES[state.leagueKey].name} · Comparativa de jugadores/as</div>
+      <div class="compare-head" style="margin-top:8px;">
+        <div class="compare-player-card">${bioPhoto(p1)}<span class="name">${p1.name}</span><span class="meta">${p1.team} · ${p1.pos}</span></div>
+        <div class="vs">VS</div>
+        <div class="compare-player-card">${bioPhoto(p2)}<span class="name">${p2.name}</span><span class="meta">${p2.team} · ${p2.pos}</span></div>
+      </div>
+    </div>
+    <div class="sheet-body">
+      <h4 class="section-title">Datos personales</h4>
+      <table class="compare-table">
+        <thead><tr><th>Dato</th><th>${p1.name.split(' ')[0]}</th><th>${p2.name.split(' ')[0]}</th></tr></thead>
+        <tbody>
+          <tr><td class="metric-name">Posición</td><td>${p1.pos}${p1.posReal?'':' (est.)'}</td><td>${p2.pos}${p2.posReal?'':' (est.)'}</td></tr>
+          <tr><td class="metric-name">Altura</td><td>${p1.height?p1.height+' cm':'—'}</td><td>${p2.height?p2.height+' cm':'—'}</td></tr>
+          <tr><td class="metric-name">Peso</td><td>${p1.weight?p1.weight+' kg':'—'}</td><td>${p2.weight?p2.weight+' kg':'—'}</td></tr>
+          <tr><td class="metric-name">Edad</td><td>${p1.age?p1.age+' años':'—'}</td><td>${p2.age?p2.age+' años':'—'}</td></tr>
+          <tr><td class="metric-name">Nacionalidad</td><td>${p1.nat||'—'}</td><td>${p2.nat||'—'}</td></tr>
+          <tr><td class="metric-name">Nacimiento</td><td>${p1.birth||'—'}</td><td>${p2.birth||'—'}</td></tr>
+        </tbody>
+      </table>
+
+      <h4 class="section-title" style="margin-top:18px;">Producción por partido</h4>
+      <table class="compare-table">
+        <thead><tr><th>Estadística</th><th>${p1.name.split(' ')[0]}</th><th>${p2.name.split(' ')[0]}</th></tr></thead>
+        <tbody>
+          ${row('Puntos', null, a1.pts, a2.pts)}
+          ${row('Rebotes', null, a1.trb, a2.trb)}
+          ${row('Asistencias', null, p1.ast, p2.ast)}
+          ${row('Robos', null, p1.stl, p2.stl)}
+          ${row('Tapones', null, p1.blk, p2.blk)}
+          ${row('Pérdidas', null, p1.tov, p2.tov, false)}
+          ${row('Minutos', null, p1.min, p2.min)}
+        </tbody>
+      </table>
+
+      <div class="chart-box"><canvas id="compareRadarChart"></canvas></div>
+
+      <h4 class="section-title" style="margin-top:18px;">Métricas avanzadas <span style="font-weight:400;color:var(--ink-dim);font-size:11px;text-transform:none;letter-spacing:0;">(verde = mejor en ese apartado; pincha el nombre para ver el significado)</span></h4>
+      <table class="compare-table">
+        <thead><tr><th>Métrica</th><th>${p1.name.split(' ')[0]}</th><th>${p2.name.split(' ')[0]}</th></tr></thead>
+        <tbody>
+          ${row('eFG%','eFG%', a1.efg, a2.efg, true, '%')}
+          ${row('TS%','TS%', a1.ts, a2.ts, true, '%')}
+          ${row('USG%','USG%', a1.usg, a2.usg, true, '%')}
+          ${row('AST%','AST%', a1.astPct, a2.astPct, true, '%')}
+          ${row('TRB%','TRB%', a1.trbPct, a2.trbPct, true, '%')}
+          ${row('TOV%','TOV%', a1.tovPct, a2.tovPct, false, '%')}
+          ${row('ORtg','ORtg', a1.ortg, a2.ortg)}
+          ${row('DRtg','DRtg', a1.drtg, a2.drtg, false)}
+          ${row('Net Rating','Net Rating', a1.netrtg, a2.netrtg)}
+          ${row('PER','PER', a1.per, a2.per)}
+        </tbody>
+      </table>
+      <div class="note">Media de la liga para referencia: ${lgAvg.pts.toFixed(1)} pts · eFG% ${lgAvg.efg.toFixed(1)}% · PER ${lgAvg.per.toFixed(1)}.</div>
+      <div class="note ${(p1.real||p2.real)?'confirmed':''}"><b>Nota:</b> los puntos por partido son reales cuando el jugador lleva la etiqueta "PTS real" en el listado. eFG%, TS%, USG%, ORtg/DRtg, Net Rating, PER, AST%, TRB% y TOV% se calculan con fórmulas estándar de baloncesto avanzado sobre el perfil de caja de cada jugador/a, igual que en sus fichas individuales.</div>
+    </div>
+  `;
+  div.appendChild(sheet);
+
+  setTimeout(()=>{
+    const ctx=document.getElementById('compareRadarChart');
+    if(ctx){
+      chartRefs.push(new Chart(ctx,{
+        type:'radar',
+        data:{
+          labels:['eFG%','TS%','USG%','AST%','TRB%','ORtg/1.4'],
+          datasets:[
+            {label:p1.name.split(' ')[0], data:[a1.efg,a1.ts,a1.usg*2,a1.astPct*2,a1.trbPct*2,a1.ortg/1.4], backgroundColor:'rgba(242,169,59,.25)', borderColor:'#F2A93B', pointBackgroundColor:'#F2A93B'},
+            {label:p2.name.split(' ')[0], data:[a2.efg,a2.ts,a2.usg*2,a2.astPct*2,a2.trbPct*2,a2.ortg/1.4], backgroundColor:'rgba(214,72,63,.2)', borderColor:'#D6483F', pointBackgroundColor:'#D6483F'}
+          ]
+        },
+        options:{responsive:true, scales:{r:{angleLines:{color:'#2A3140'},grid:{color:'#2A3140'},pointLabels:{color:'#ECEFF4',font:{size:11}},ticks:{color:'#8B93A1',backdropColor:'transparent',stepSize:20},min:0,max:100}}, plugins:{legend:{labels:{color:'#8B93A1'}}}}
+      }));
+    }
+  },0);
+
+  return div;
+}
+
+function screenCompareTeams(){
+  const div=document.createElement('div');
+  div.appendChild(backBtn(()=>{state.entity=null; render();},'← Volver al listado (comparar otros equipos)'));
+  const [d1,d2]=state.entity.data;
+  const t1=d1.team, t2=d2.team, league=d1.league;
+  const ff1=t1.ff, ff2=t2.ff;
+  const poss1=getPoss(t1.name), poss2=getPoss(t2.name);
+  const roster1=league.players.filter(p=>p.team===t1.name);
+  const roster2=league.players.filter(p=>p.team===t2.name);
+  const logo1=teamLogo(t1.name), logo2=teamLogo(t2.name);
+
+  function row(label, key, v1, v2, higherIsBetter=true, suffix='', decimals=1){
+    let c1='tie', c2='tie';
+    if(v1!==null && v2!==null && Math.abs(v1-v2) > 0.05){
+      const t1wins = higherIsBetter ? v1>v2 : v1<v2;
+      c1 = t1wins?'win':'lose'; c2 = t1wins?'lose':'win';
+    }
+    const lbl = key ? metricLabel(key, label) : label;
+    const fmt=(v)=> v===null ? '—' : v.toFixed(decimals)+suffix;
+    return `<tr><td class="metric-name">${lbl}</td><td class="${c1}">${fmt(v1)}</td><td class="${c2}">${fmt(v2)}</td></tr>`;
+  }
+
+  const sheet=document.createElement('div'); sheet.className='sheet';
+  sheet.innerHTML=`
+    <div class="sheet-head">
+      <div class="sheet-head-top">
+        <div class="sheet-eyebrow">${league.name} · Comparativa de equipos</div>
+        <button class="pdf-btn no-print" onclick="window.print()">📄 Descargar PDF</button>
+      </div>
+      <div class="compare-head" style="margin-top:8px;">
+        <div class="compare-player-card">${logo1?`<img src="${logo1}" alt="" style="width:64px;height:64px;object-fit:contain;">`:`<div class="bio-photo-fallback">${t1.name.slice(0,2)}</div>`}<span class="name">${t1.name}</span><span class="meta">${roster1.length} jugadores cargados</span></div>
+        <div class="vs">VS</div>
+        <div class="compare-player-card">${logo2?`<img src="${logo2}" alt="" style="width:64px;height:64px;object-fit:contain;">`:`<div class="bio-photo-fallback">${t2.name.slice(0,2)}</div>`}<span class="name">${t2.name}</span><span class="meta">${roster2.length} jugadores cargados</span></div>
+      </div>
+    </div>
+    <div class="sheet-body">
+      ${(ff1 && ff2) ? `
+      <h4 class="section-title">Producción por partido</h4>
+      <table class="compare-table">
+        <thead><tr><th>Estadística</th><th>${t1.name.split(' ')[0]}</th><th>${t2.name.split(' ')[0]}</th></tr></thead>
+        <tbody>
+          ${row('Puntos', null, ff1.pts, ff2.pts)}
+          ${ff1.ast!==undefined && ff2.ast!==undefined ? row('Asistencias', null, ff1.ast, ff2.ast) : ''}
+          ${ff1.treb!==undefined && ff2.treb!==undefined ? row('Rebotes', null, ff1.treb, ff2.treb) : ''}
+          ${row('Partidos', null, ff1.games, ff2.games, true, '', 0)}
+        </tbody>
+      </table>
+
+      <div class="chart-box"><canvas id="compareTeamsFFChart"></canvas></div>
+
+      <h4 class="section-title" style="margin-top:18px;">4 Factores de Dean Oliver <span style="font-weight:400;color:var(--ink-dim);font-size:11px;text-transform:none;letter-spacing:0;">(verde = mejor; pincha el nombre para ver el significado)</span></h4>
+      <table class="compare-table">
+        <thead><tr><th>Factor</th><th>${t1.name.split(' ')[0]}</th><th>${t2.name.split(' ')[0]}</th></tr></thead>
+        <tbody>
+          ${row('eFG%','eFG%', ff1.efg, ff2.efg, true, '%')}
+          ${row('TOV%','TOV%', ff1.tov, ff2.tov, false, '%')}
+          ${row('ORB%*','ORB%', ff1.orb, ff2.orb, true, '%')}
+          ${row('FT Rate','FT Rate', ff1.ftr, ff2.ftr, true, '%')}
+        </tbody>
+      </table>
+
+      <h4 class="section-title" style="margin-top:18px;">Posesiones y ritmo</h4>
+      <table class="compare-table">
+        <thead><tr><th></th><th>${t1.name.split(' ')[0]}</th><th>${t2.name.split(' ')[0]}</th></tr></thead>
+        <tbody>
+          ${row('Posesiones/partido', null, poss1, poss2)}
+          ${row('Puntos por cada 5 min', null, ff1.pts/8, ff2.pts/8)}
+        </tbody>
+      </table>
+      <div class="note confirmed"><b>Dato real:</b> los 4 Factores y las posesiones están calculados directamente sobre las medias oficiales de equipo. *ORB% es una tasa de rebote ofensivo propio, no ajustada al rival.</div>
+      ` : `<div class="note">Uno de los dos equipos todavía no tiene los 4 Factores confirmados en esta versión, así que no se puede hacer la comparación estadística completa. Se muestra solo lo disponible.</div>`}
+    </div>
+  `;
+  div.appendChild(sheet);
+
+  if(ff1 && ff2){
+    setTimeout(()=>{
+      const ctx=document.getElementById('compareTeamsFFChart');
+      if(ctx){
+        chartRefs.push(new Chart(ctx,{
+          type:'bar',
+          data:{labels:['eFG%','TOV%','ORB%*','FT Rate'],
+            datasets:[
+              {label:t1.name.split(' ')[0], data:[ff1.efg,ff1.tov,ff1.orb,ff1.ftr], backgroundColor:'#F2A93B'},
+              {label:t2.name.split(' ')[0], data:[ff2.efg,ff2.tov,ff2.orb,ff2.ftr], backgroundColor:'#D6483F'}
+            ]},
+          options:{responsive:true, plugins:{legend:{labels:{color:'#8B93A1'}}}, scales:{x:{ticks:{color:'#8B93A1'},grid:{color:'#1D2330'}}, y:{ticks:{color:'#8B93A1'},grid:{color:'#1D2330'}}}}
+        }));
+      }
+    },0);
+  }
+
+  return div;
+}
+
+function screenDetail(){
+  const div=document.createElement('div');
+  div.appendChild(backBtn(()=>{state.entity=null; render();},'← Volver al listado'));
+
+  if(state.entity.type==='jugador'){
+    const pl=state.entity.data;
+    const adv=computeAdvanced(pl);
+    const allPlayers=LEAGUES[state.leagueKey].players;
+    const lgAvg=leaguePlayerAvg(allPlayers);
+    const posAvg=positionAvg(allPlayers, pl.pos);
+    const sheet=document.createElement('div'); sheet.className='sheet';
+    const bioPhoto = pl.photo ? `<img class="bio-photo" src="${pl.photo}" alt="${pl.name}">` : `<div class="bio-photo-fallback">${pl.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>`;
+    const naSpan = '<span class="v na">No disponible</span>';
+    sheet.innerHTML=`
+      <div class="sheet-head">
+        <div class="sheet-head-top">
+          <div>
+            <div class="sheet-eyebrow">${LEAGUES[state.leagueKey].name} · ${pl.pos}${pl.posReal?'':' (estimada)'}${pl.real?' · PTS oficial confirmado':''}</div>
+            <div class="sheet-name">${pl.name}</div>
+            <div class="sheet-meta"><span>${pl.team}</span>${pl.nat?`<span>${pl.nat}</span>`:''}${pl.games?`<span>${pl.games} partidos</span>`:''}</div>
+          </div>
+          <button class="pdf-btn no-print" onclick="window.print()">📄 Descargar PDF</button>
+        </div>
+      </div>
+      <div class="sheet-body">
+        <div class="bio-card">
+          ${bioPhoto}
+          <div class="bio-grid">
+            <div class="bio-item"><span class="k">Posición</span><span class="v">${pl.pos}${pl.posReal?' <span style="color:var(--teal);font-size:10px;">· real</span>':' <span style="color:var(--ink-dim);font-size:10px;">· estimada</span>'}</span></div>
+            <div class="bio-item"><span class="k">Altura</span>${pl.height?`<span class="v">${pl.height} cm</span>`:naSpan}</div>
+            <div class="bio-item"><span class="k">Peso</span>${pl.weight?`<span class="v">${pl.weight} kg</span>`:naSpan}</div>
+            <div class="bio-item"><span class="k">Edad</span>${pl.age?`<span class="v">${pl.age} años</span>`:naSpan}</div>
+            <div class="bio-item"><span class="k">Fecha de nacimiento</span>${pl.birth?`<span class="v">${pl.birth}</span>`:naSpan}</div>
+            <div class="bio-item"><span class="k">Lugar de nacimiento</span>${pl.birthplace?`<span class="v">${pl.birthplace}</span>`:naSpan}</div>
+            <div class="bio-item"><span class="k">Nacionalidad</span>${pl.nat?`<span class="v">${pl.nat}</span>`:naSpan}</div>
+            <div class="bio-item"><span class="k">Pasaporte / doble nac.</span>${naSpan}</div>
+          </div>
+        </div>
+        <div class="note ${pl.bioReal?'confirmed':''}"><b>${pl.bioReal?'Dato real:':'Nota:'}</b> ${pl.bioReal?'Foto, nacimiento y nacionalidad proceden de la ficha oficial de baloncestoenvivo.feb.es.':'Altura y edad son reales (proballers.com). Foto, fecha/lugar de nacimiento, pasaporte y peso no están disponibles en las fuentes usadas para este jugador/a en esta versión — se muestran como "No disponible" en vez de inventarse. La posición se marca como "estimada" cuando no procede de una ficha oficial: se calcula a partir de la altura y el perfil de rebotes/asistencias reales del jugador.'}</div>
+
+        <div class="stat-grid">
+          <div class="stat-cell"><div class="val">${adv.pts.toFixed(1)}</div><div class="lab">Puntos${pl.real?' (real)':''}</div></div>
+          <div class="stat-cell"><div class="val">${adv.trb.toFixed(1)}</div><div class="lab">Rebotes</div></div>
+          <div class="stat-cell"><div class="val">${pl.ast.toFixed(1)}</div><div class="lab">Asistencias</div></div>
+          <div class="stat-cell"><div class="val">${pl.stl.toFixed(1)}</div><div class="lab">Robos</div></div>
+          <div class="stat-cell"><div class="val">${pl.blk.toFixed(1)}</div><div class="lab">Tapones</div></div>
+        </div>
+
+        <h4 class="section-title">Vs. media de la liga (${allPlayers.length} jugadores/as)</h4>
+        <div class="adv-row"><span class="name">Puntos (media liga: ${lgAvg.pts.toFixed(1)})</span><span class="num" style="width:auto;font-family:'IBM Plex Mono',monospace;">${(adv.pts-lgAvg.pts)>=0?'+':''}${(adv.pts-lgAvg.pts).toFixed(1)}</span></div>
+        <div class="adv-row"><span class="name">${metricLabel('eFG%')} (media liga: ${lgAvg.efg.toFixed(1)}%)</span><span class="num" style="width:auto;font-family:'IBM Plex Mono',monospace;">${(adv.efg-lgAvg.efg)>=0?'+':''}${(adv.efg-lgAvg.efg).toFixed(1)}</span></div>
+        <div class="adv-row"><span class="name">${metricLabel('PER')} (media liga: ${lgAvg.per.toFixed(1)})</span><span class="num" style="width:auto;font-family:'IBM Plex Mono',monospace;">${(adv.per-lgAvg.per)>=0?'+':''}${(adv.per-lgAvg.per).toFixed(1)}</span></div>
+
+        ${posAvg ? `
+        <h4 class="section-title" style="margin-top:18px;">Vs. media de su posición · ${pl.pos} (${posAvg.n} jugadores/as)</h4>
+        <div class="adv-row"><span class="name">Puntos (media ${pl.pos.toLowerCase()}: ${posAvg.pts.toFixed(1)})</span><span class="num" style="width:auto;font-family:'IBM Plex Mono',monospace;">${(adv.pts-posAvg.pts)>=0?'+':''}${(adv.pts-posAvg.pts).toFixed(1)}</span></div>
+        <div class="adv-row"><span class="name">${metricLabel('TRB%')} (media ${pl.pos.toLowerCase()}: ${posAvg.trbPct.toFixed(1)}%)</span><span class="num" style="width:auto;font-family:'IBM Plex Mono',monospace;">${(adv.trbPct-posAvg.trbPct)>=0?'+':''}${(adv.trbPct-posAvg.trbPct).toFixed(1)}</span></div>
+        <div class="adv-row"><span class="name">${metricLabel('AST%')} (media ${pl.pos.toLowerCase()}: ${posAvg.astPct.toFixed(1)}%)</span><span class="num" style="width:auto;font-family:'IBM Plex Mono',monospace;">${(adv.astPct-posAvg.astPct)>=0?'+':''}${(adv.astPct-posAvg.astPct).toFixed(1)}</span></div>
+        <div class="adv-row"><span class="name">${metricLabel('PER')} (media ${pl.pos.toLowerCase()}: ${posAvg.per.toFixed(1)})</span><span class="num" style="width:auto;font-family:'IBM Plex Mono',monospace;">${(adv.per-posAvg.per)>=0?'+':''}${(adv.per-posAvg.per).toFixed(1)}</span></div>
+        ` : `<div class="note">No hay suficientes jugadores/as con posición "${pl.pos}" cargados en esta liga todavía para calcular una media fiable por posición.</div>`}
+
+        <h4 class="section-title">Diana · perfil avanzado vs. media de liga</h4>
+        <div class="chart-box">
+          <canvas id="radarChart"></canvas>
+          <table class="pm-table" style="margin-top:14px;">
+            <thead><tr><th>Eje de la diana</th><th>${pl.name.split(' ')[0]}</th><th>Media liga</th></tr></thead>
+            <tbody>
+              <tr><td class="pname">${metricLabel('eFG%')}</td><td>${adv.efg.toFixed(1)}%</td><td>${lgAvg.efg.toFixed(1)}%</td></tr>
+              <tr><td class="pname">${metricLabel('TS%')}</td><td>${adv.ts.toFixed(1)}%</td><td>${lgAvg.ts.toFixed(1)}%</td></tr>
+              <tr><td class="pname">${metricLabel('USG%')}</td><td>${adv.usg.toFixed(1)}%</td><td>${lgAvg.usg.toFixed(1)}%</td></tr>
+              <tr><td class="pname">${metricLabel('AST%')}</td><td>${adv.astPct.toFixed(1)}%</td><td>${lgAvg.astPct.toFixed(1)}%</td></tr>
+              <tr><td class="pname">${metricLabel('TRB%')}</td><td>${adv.trbPct.toFixed(1)}%</td><td>${lgAvg.trbPct.toFixed(1)}%</td></tr>
+              <tr><td class="pname">${metricLabel('ORtg')}</td><td>${adv.ortg.toFixed(1)}</td><td>${lgAvg.ortg.toFixed(1)}</td></tr>
+            </tbody>
+          </table>
+          <div class="note">La diana representa cada eje en una escala 0-100 para poder comparar magnitudes distintas en el mismo gráfico (por eso AST%, USG% y TRB% aparecen multiplicados x2 y ORtg dividido entre 1,4 en el dibujo); la tabla de arriba da el valor real de cada métrica sin escalar, tanto tuyo como la media de la liga.</div>
+        </div>
+
+        <h4 class="section-title">Métricas avanzadas <span style="font-weight:400;color:var(--ink-dim);font-size:11px;text-transform:none;letter-spacing:0;">(pincha el nombre para ver qué significa; entre paréntesis, la media de la liga)</span></h4>
+        <div class="adv-row"><span class="name">${metricLabel('eFG%','eFG% (tiro efectivo)')} <i style="color:var(--ink-dim);font-style:normal;">(liga: ${lgAvg.efg.toFixed(1)}%)</i></span>${bar(adv.efg,65)}</div>
+        <div class="adv-row"><span class="name">${metricLabel('TS%','TS% (True Shooting)')} <i style="color:var(--ink-dim);font-style:normal;">(liga: ${lgAvg.ts.toFixed(1)}%)</i></span>${bar(adv.ts,70)}</div>
+        <div class="adv-row"><span class="name">${metricLabel('USG%','USG% (uso de posesiones)')} <i style="color:var(--ink-dim);font-style:normal;">(liga: ${lgAvg.usg.toFixed(1)}%)</i></span>${bar(adv.usg,38)}</div>
+        <div class="adv-row"><span class="name">${metricLabel('AST%','AST% (asistencias)')} <i style="color:var(--ink-dim);font-style:normal;">(liga: ${lgAvg.astPct.toFixed(1)}%)</i></span>${bar(adv.astPct,45)}</div>
+        <div class="adv-row"><span class="name">${metricLabel('TRB%','TRB% (rebote total)')} <i style="color:var(--ink-dim);font-style:normal;">(liga: ${lgAvg.trbPct.toFixed(1)}%)</i></span>${bar(adv.trbPct,35)}</div>
+        <div class="adv-row"><span class="name">${metricLabel('TOV%','TOV% (pérdidas)')} <i style="color:var(--ink-dim);font-style:normal;">(liga: ${lgAvg.tovPct.toFixed(1)}%)</i></span>${bar(adv.tovPct,30)}</div>
+        <div class="adv-row"><span class="name">${metricLabel('ORtg','ORtg (ofensivo /100 pos.)')} <i style="color:var(--ink-dim);font-style:normal;">(liga: ${lgAvg.ortg.toFixed(1)})</i></span>${bar(adv.ortg,140)}</div>
+        <div class="adv-row"><span class="name">${metricLabel('DRtg','DRtg (defensivo /100 pos., aprox.)')} <i style="color:var(--ink-dim);font-style:normal;">(liga: ${lgAvg.drtg.toFixed(1)})</i></span>${bar(adv.drtg,140)}</div>
+        <div class="adv-row"><span class="name">${metricLabel('Net Rating')}</span><span class="num" style="width:auto;font-family:'IBM Plex Mono',monospace;">${adv.netrtg>=0?'+':''}${adv.netrtg.toFixed(1)}</span></div>
+        <div class="adv-row"><span class="name">${metricLabel('PER','PER (simplificado)')} <i style="color:var(--ink-dim);font-style:normal;">(liga: ${lgAvg.per.toFixed(1)})</i></span><span class="num" style="width:auto;font-family:'IBM Plex Mono',monospace;">${adv.per.toFixed(1)}</span></div>
+
+        <h4 class="section-title" style="margin-top:20px;">Producción por partido</h4>
+        <div class="chart-box">
+          <canvas id="barChart"></canvas>
+          <table class="pm-table" style="margin-top:14px;">
+            <thead><tr><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th><th>TOV</th></tr></thead>
+            <tbody><tr><td>${adv.pts.toFixed(1)}</td><td>${adv.trb.toFixed(1)}</td><td>${pl.ast.toFixed(1)}</td><td>${pl.stl.toFixed(1)}</td><td>${pl.blk.toFixed(1)}</td><td>${pl.tov.toFixed(1)}</td></tr></tbody>
+          </table>
+        </div>
+
+        <h4 class="section-title" style="margin-top:20px;">Mapa de calor por zonas de tiro<span class="illustrative-tag">Ilustrativo</span></h4>
+        ${shotZoneHTML(pl)}
+
+        <div class="note ${pl.real?'confirmed':''}"><b>${pl.real?'Dato real:':'Nota:'}</b> ${pl.real?`Los puntos por partido (${adv.pts.toFixed(1)}) proceden del ranking oficial de baloncestoenvivo.feb.es.`:''} eFG%, TS%, USG%, ORtg/DRtg, Net Rating, PER, AST%, TRB% y TOV% son cálculos con fórmulas estándar de baloncesto avanzado (Basketball-Reference/Dean Oliver) aplicadas sobre el perfil de caja de este jugador/a; DRtg y PER usan una versión simplificada al no disponer de estadística de equipo rival y de posesión detallada por jugador.</div>
+      </div>
+    `;
+    div.appendChild(sheet);
+
+    setTimeout(()=>{
+      const radarCtx=document.getElementById('radarChart');
+      chartRefs.push(new Chart(radarCtx,{
+        type:'radar',
+        data:{
+          labels:['eFG%','TS%','USG%','AST%','TRB%','ORtg/1.4'],
+          datasets:[
+            {label:pl.name.split(' ')[0], data:[adv.efg,adv.ts,adv.usg*2,adv.astPct*2,adv.trbPct*2,adv.ortg/1.4], backgroundColor:'rgba(242,169,59,.28)', borderColor:'#F2A93B', pointBackgroundColor:'#F2A93B'},
+            {label:'Media liga', data:[lgAvg.efg,lgAvg.ts,lgAvg.usg*2,lgAvg.astPct*2,lgAvg.trbPct*2,lgAvg.ortg/1.4], backgroundColor:'rgba(54,201,176,.15)', borderColor:'#36C9B0', pointBackgroundColor:'#36C9B0'}
+          ]
+        },
+        options:{responsive:true, scales:{r:{angleLines:{color:'#2A3140'},grid:{color:'#2A3140'},pointLabels:{color:'#ECEFF4',font:{size:11}},ticks:{color:'#8B93A1',backdropColor:'transparent',stepSize:20},min:0,max:100}}, plugins:{legend:{labels:{color:'#8B93A1'}}}}
+      }));
+      const barCtx=document.getElementById('barChart');
+      chartRefs.push(new Chart(barCtx,{
+        type:'bar',
+        data:{labels:['PTS','REB','AST','STL','BLK','TOV'],
+          datasets:[{label:pl.name.split(' ')[0], data:[adv.pts,adv.trb,pl.ast,pl.stl,pl.blk,pl.tov], backgroundColor:['#F2A93B','#36C9B0','#36C9B0','#8B93A1','#8B93A1','#D6483F']}]},
+        options:{responsive:true, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#8B93A1'},grid:{color:'#1D2330'}}, y:{ticks:{color:'#8B93A1'},grid:{color:'#1D2330'}}}}
+      }));
+    },0);
+
+  } else {
+    const {team,league}=state.entity.data;
+    const sheet=document.createElement('div'); sheet.className='sheet';
+    const ff=team.ff;
+    const poss = getPoss(team.name);
+    const leagueTeamsWithPoss = league.teams.filter(t=>getPoss(t.name)!==null);
+    const leagueAvgPoss = leagueTeamsWithPoss.length ? leagueTeamsWithPoss.reduce((s,t)=>s+getPoss(t.name),0)/leagueTeamsWithPoss.length : null;
+    const roster = league.players.filter(p=>p.team===team.name);
+    const hasRealGame = team.name==='Spar Girona' || team.name==='Valencia B.C.';
+    const teamLogoUrl = teamLogo(team.name);
+    sheet.innerHTML=`
+      <div class="sheet-head">
+        <div class="sheet-head-top">
+          <div style="display:flex;align-items:center;gap:14px;">
+            ${teamLogoUrl?`<img src="${teamLogoUrl}" alt="" style="width:56px;height:56px;object-fit:contain;flex-shrink:0;background:rgba(255,255,255,.06);border-radius:8px;padding:4px;">`:''}
+            <div>
+              <div class="sheet-eyebrow">${league.name}</div>
+              <div class="sheet-name">${team.name}</div>
+            </div>
+          </div>
+          <button class="pdf-btn no-print" onclick="window.print()">📄 Descargar PDF</button>
+        </div>
+        <div class="sheet-meta">${league.sub}${ff?` · ${ff.games} partidos`:''}</div>
+      </div>
+      <div class="sheet-body">
+        ${ff ? `
+          <div class="stat-grid">
+            <div class="stat-cell"><div class="val">${ff.pts.toFixed(1)}</div><div class="lab">Puntos/partido</div></div>
+            ${ff.ast!==undefined?`<div class="stat-cell"><div class="val">${ff.ast.toFixed(1)}</div><div class="lab">Asist./partido</div></div>`:''}
+            ${ff.treb!==undefined?`<div class="stat-cell"><div class="val">${ff.treb.toFixed(1)}</div><div class="lab">Rebotes/partido</div></div>`:''}
+            ${poss?`<div class="stat-cell"><div class="val">${poss.toFixed(1)}</div><div class="lab">Posesiones/partido</div></div>`:''}
+            <div class="stat-cell"><div class="val">${ff.games}</div><div class="lab">Partidos</div></div>
+          </div>
+          <h4 class="section-title">4 Factores de Dean Oliver</h4>
+          <div class="chart-box"><canvas id="ffBarChart"></canvas></div>
+          <div class="adv-row"><span class="name">eFG% — tiro efectivo</span>${bar(ff.efg,65)}</div>
+          <div class="adv-row"><span class="name">TOV% — pérdidas por posesión</span>${bar(ff.tov,30)}</div>
+          <div class="adv-row"><span class="name">ORB%* — rebote ofensivo propio</span>${bar(ff.orb,45)}</div>
+          <div class="adv-row"><span class="name">FT Rate — tiros libres/tiros de campo</span>${bar(ff.ftr,45)}</div>
+          <div class="note confirmed"><b>Dato real:</b> los 4 Factores están calculados directamente sobre las medias oficiales de equipo publicadas en baloncestoenvivo.feb.es (temporada 2025/26). *ORB% es una tasa de rebote ofensivo propio (no ajustada al rival, por no estar publicada esa granularidad).</div>
+
+          ${poss?`
+          <h4 class="section-title" style="margin-top:20px;">Posesiones, ritmo y rendimiento por cada 5 minutos</h4>
+          <div class="adv-row"><span class="name">Ritmo (posesiones/partido, 40 min)${leagueAvgPoss?` <i style="color:var(--ink-dim);font-style:normal;">(media liga: ${leagueAvgPoss.toFixed(1)})</i>`:''}</span>${bar(poss,90)}</div>
+          <div class="adv-row"><span class="name">Puntos por cada 5 min de juego</span>${bar(ff.pts/8,14)}</div>
+          ${ff.ast!==undefined?`<div class="adv-row"><span class="name">Asistencias por cada 5 min</span>${bar(ff.ast/8,3)}</div>`:''}
+          ${ff.treb!==undefined?`<div class="adv-row"><span class="name">Rebotes por cada 5 min</span>${bar(ff.treb/8,5)}</div>`:''}
+          ${leagueAvgPoss?`<div class="note confirmed"><b>Media de la liga:</b> ${leagueAvgPoss.toFixed(1)} posesiones/partido, calculada sobre los ${leagueTeamsWithPoss.length} equipos de ${league.name} con datos confirmados. Este equipo juega ${poss>=leagueAvgPoss?'más rápido':'más despacio'} que la media (${(poss-leagueAvgPoss>=0?'+':'')}${(poss-leagueAvgPoss).toFixed(1)} posesiones).</div>`:''}
+          <div class="note confirmed"><b>Dato real (calculado):</b> posesiones estimadas con la fórmula estándar Poss ≈ TCA − RO + BP + 0,44×TLA aplicada a las medias oficiales de equipo; el rendimiento "por cada 5 minutos" es ese mismo dato real repartido entre los 8 tramos de 5 minutos que tiene un partido de 40 minutos.</div>
+          `:''}
+
+          <h4 class="section-title" style="margin-top:20px;">Distribución de minutos · temporada 2025/26</h4>
+          ${minutesChartHTML(roster)}
+
+          <h4 class="section-title" style="margin-top:20px;">Quintetos · eficiencia por combinación de 5<span class="illustrative-tag">Ilustrativo</span></h4>
+          ${lineupsHTML(team.name, roster)}
+        ` : `<div class="note">Todavía no hay datos oficiales de equipo confirmados para este club en esta versión de la app. El club en sí es real y forma parte de la competición ${league.name} 2025/26 según feb.es.</div>`}
+
+        ${hasRealGame ? `
+          <h4 class="section-title" style="margin-top:20px;">Partido real analizado · impacto por jugadora (+/-)</h4>
+          ${realGameHTML(REAL_GAME_LFENDESA, team.name)}
+        ` : ''}
+      </div>
+    `;
+    div.appendChild(sheet);
+
+    if(ff){
+      setTimeout(()=>{
+        const ctx=document.getElementById('ffBarChart');
+        const avgFFteam = leagueAvgFFComputed(league.teams) || {efg:0,tov:0,orb:0,ftr:0};
+        chartRefs.push(new Chart(ctx,{
+          type:'bar',
+          data:{labels:['eFG%','TOV%','ORB%*','FT Rate'],
+            datasets:[
+              {label:team.name.split(' ')[0], data:[ff.efg,ff.tov,ff.orb,ff.ftr], backgroundColor:'#F2A93B'},
+              {label:'Media liga', data:[avgFFteam.efg,avgFFteam.tov,avgFFteam.orb,avgFFteam.ftr], backgroundColor:'#36C9B0'}
+            ]},
+          options:{responsive:true, plugins:{legend:{labels:{color:'#8B93A1'}}}, scales:{x:{ticks:{color:'#8B93A1'},grid:{color:'#1D2330'}}, y:{ticks:{color:'#8B93A1'},grid:{color:'#1D2330'}}}}
+        }));
+      },0);
+    }
+    if(roster.length){
+      setTimeout(()=>{
+        const minCtx=document.getElementById('minutesChart');
+        if(minCtx){
+          const sorted=[...roster].filter(p=>p.min).sort((a,b)=>b.min-a.min);
+          chartRefs.push(new Chart(minCtx,{
+            type:'bar',
+            data:{
+              labels: sorted.map(p=>p.name),
+              datasets:[{
+                label:'Minutos/partido',
+                data: sorted.map(p=>p.min),
+                backgroundColor: sorted.map(p=>minutesColor(p.min))
+              }]
+            },
+            options:{
+              responsive:true, maintainAspectRatio:false,
+              plugins:{legend:{display:false}, tooltip:{callbacks:{label:(c)=>c.parsed.y.toFixed(1)+' min/partido'}}},
+              scales:{
+                x:{ticks:{color:'#ECEFF4',font:{size:10},autoSkip:false,maxRotation:80,minRotation:60},grid:{display:false}},
+                y:{ticks:{color:'#8B93A1'},grid:{color:'#1D2330'}, title:{display:true,text:'Minutos por partido',color:'#8B93A1'}}
+              }
+            }
+          }));
+        }
+      },0);
+    }
+    if(hasRealGame){
+      setTimeout(()=>{
+        const g=REAL_GAME_LFENDESA;
+        const ctx=document.getElementById('quarterChart');
+        if(ctx){
+          const diff = g.home.quarters.map((q,i)=>q-g.away.quarters[i]);
+          chartRefs.push(new Chart(ctx,{
+            type:'bar',
+            data:{labels:['C1','C2','C3','C4'],
+              datasets:[{label:`Diferencia ${g.home.name} - ${g.away.name} por cuarto`, data:diff, backgroundColor:diff.map(d=>d>=0?'#36C9B0':'#D6483F')}]},
+            options:{responsive:true, plugins:{legend:{labels:{color:'#8B93A1'}}}, scales:{x:{ticks:{color:'#8B93A1'},grid:{color:'#1D2330'}}, y:{ticks:{color:'#8B93A1'},grid:{color:'#1D2330'}}}}
+          }));
+        }
+      },0);
+    }
+  }
+  return div;
+}
+
+render();
+</script>
+</body>
+</html>
