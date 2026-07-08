@@ -428,6 +428,20 @@ const BIO_FULL = {
   "Dan Duscak":{photo:"https://imagenes.feb.es/Foto.aspx?c=2822575", birth:"02/07/2002", birthplace:"A Coruña", nat:"🇸🇮 Eslovenia", pos:"Base", h:185},
   "Raul Lobaco":{photo:"https://imagenes.feb.es/Foto.aspx?c=1978545", birth:"29/11/2000", birthplace:"España", nat:"🇪🇸 España", pos:"Escolta", h:190},
   "Gaizka Maiza":{photo:null, birth:"14/07/1996 (Ibarra)", birthplace:"Ibarra (Guipúzcoa)", nat:"🇪🇸 España", pos:"Base", h:191},
+  // Ampliación con la web oficial del club (palenciabaloncesto.com/es/equipo) — foto, altura y nacimiento reales de toda la plantilla 2025/26
+  "Adam Kunkel":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/1/9/6/1196_4.jpg", birth:"09/12/1999", birthplace:null, nat:"🇺🇸 EE.UU.", pos:"Escolta", h:193},
+  "Alec Wintering":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/1/9/5/1195_4.jpg", birth:"26/04/1995", birthplace:null, nat:"🇺🇸 EE.UU.", pos:"Base", h:180},
+  "Tobias Borg":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/1/9/9/1199_4.jpg", birth:"02/11/1993", birthplace:null, nat:"🇸🇪 Suecia", pos:"Escolta", h:183},
+  "Xabier Oroz":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/1/9/7/1197_4.jpg", birth:"19/01/1996", birthplace:null, nat:"🇪🇸 España", pos:"Base", h:193},
+  "Ingus Jakovics":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/1/9/8/1198_4.jpg", birth:"18/04/1993", birthplace:null, nat:"🇱🇻 Letonia", pos:"Base", h:186},
+  "Mathieu Kamba":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/2/0/2/1202_4.jpg", birth:"05/10/1995", birthplace:null, nat:"🇫🇷 Francia", pos:"Alero", h:196},
+  "Manuel Rodriguez":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/2/0/1/1201_4.jpg", birth:"17/08/1991", birthplace:null, nat:"🇪🇸 España", pos:"Escolta", h:192},
+  "Josip Vrankic":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/2/0/4/1204_4.jpg", birth:"24/10/1998", birthplace:null, nat:"🇨🇦 Canadá / 🇭🇷 Croacia (doble nacionalidad)", pos:"Ala-Pívot", h:205},
+  "Jose Maria Gonzalez":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/2/0/5/1205_4.jpg", birth:"15/08/1991", birthplace:null, nat:"🇪🇸 España", pos:"Pívot", h:206},
+  "Mladen Armus":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/2/0/6/1206_4.jpg", birth:"26/03/1997", birthplace:null, nat:"🇷🇸 Serbia", pos:"Pívot", h:208},
+  "Vasilije Vucetic":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/4/0/0/1400_4.jpg", birth:"04/05/1996", birthplace:null, nat:"🇷🇸 Serbia", pos:"Pívot", h:207},
+  "Alvaro Munoz":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/2/0/0/1200_4.jpg", birth:"25/11/1990", birthplace:null, nat:"🇪🇸 España", pos:"Alero", h:196},
+  "Gilad Levy":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/4/0/4/1404_4.jpg", birth:"03/07/2002", birthplace:null, nat:"🇮🇱 Israel", pos:"Pívot", h:216},
   "Philip Scrubb":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/sans-titre-1-1ed4bee6-97a9-6bca-abdd-d9424302d95e.jpg", birth:"27/11/1992", birthplace:"Canadá", nat:"🇨🇦 Canadá", pos:"Escolta", h:192},
   "Tyrell Roberts":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/tyrell-roberts-1-1ee83096-c0e8-613c-b34c-39fbd37d1a77.png", birth:"01/01/1999", birthplace:"Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Base", h:180},
   "Mustapha Heron":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/mustapha-hero-1ef0a50a-69d8-62b6-bae4-195e8ca40332.png", birth:"12/12/1997", birthplace:"Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Alero", h:197}
@@ -458,6 +472,20 @@ const TEAM_LOGOS = {
 function teamLogo(teamName){
   const id = TEAM_LOGOS[teamName];
   return id ? `https://www.proballers.com/api/getTeamLogo?id=${id}&width=100` : null;
+}
+// Escudo de equipo con fallback automático a iniciales si la imagen no carga
+// (proballers.com puede bloquear la carga directa de la imagen desde otro dominio - protección de hotlinking)
+function teamBadgeHTML(teamName, size){
+  const logo = teamLogo(teamName);
+  const initials = teamName.split(' ').filter(w=>w.length>2).slice(0,2).map(w=>w[0]).join('').toUpperCase() || teamName.slice(0,2).toUpperCase();
+  const fontSize = Math.round(size*0.36);
+  if(!logo){
+    return `<div class="bio-photo-fallback" style="width:${size}px;height:${size}px;font-size:${fontSize}px;border-radius:8px;flex-shrink:0;">${initials}</div>`;
+  }
+  return `<span style="display:inline-flex;position:relative;width:${size}px;height:${size}px;flex-shrink:0;">
+    <img src="${logo}" alt="" style="width:${size}px;height:${size}px;object-fit:contain;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+    <div class="bio-photo-fallback" style="display:none;position:absolute;inset:0;width:${size}px;height:${size}px;font-size:${fontSize}px;border-radius:8px;align-items:center;justify-content:center;">${initials}</div>
+  </span>`;
 }
 
 function attachBio(p){
@@ -949,21 +977,56 @@ function setActiveSeason(season){
   LEAGUES = (season === '2026-2027') ? LEAGUES_2026_2027 : LEAGUES_2025_2026;
 }
 
-let state = { unlocked:false, season:null, seasonMenuOpen:false, leagueKey:null, mode:null, entity:null, compareMode:false, compareSel:[], teamCompareMode:false, teamCompareSel:[] };
+let state = { unlocked:false, season:null, seasonMenuOpen:false, leagueKey:null, mode:null, entity:null, compareMode:false, compareSel:[], teamCompareMode:false, teamCompareSel:[], playersSubView:'stats', filters:{minPts:'', minReb:'', minAst:'', minEfg:'', minPer:'', pos:'', team:''} };
 // Aplicar biografía/posición a los jugadores estáticos (Segunda FEB, LF Endesa, LF Challenge)
 ['segunda_feb','lf_endesa','lf_challenge'].forEach(k=>{ LEAGUES[k].players.forEach(attachBio); });
 let chartRefs = [];
 
 const SEASONS_WITH_DATA = ['2025-2026', '2026-2027'];
+const ACCESS_PASSWORD = 'mutombo';
+
+function screenLock(){
+  const div=document.createElement('div');
+  div.style.maxWidth='380px'; div.style.margin='60px auto 0';
+  div.innerHTML=`
+    <div style="text-align:center;margin-bottom:22px;">
+      <div style="font-size:34px;margin-bottom:10px;">🔒</div>
+      <h1 class="headline" style="font-size:24px;">Acceso privado</h1>
+      <p class="sub">Introduce la clave de acceso para entrar en FEB Stats Lab.</p>
+    </div>
+    <input id="lockInput" type="password" placeholder="Contraseña" style="width:100%;padding:13px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-family:'Inter',sans-serif;font-size:15px;outline:none;text-align:center;margin-bottom:10px;">
+    <div id="lockError" style="color:var(--crimson);font-size:12.5px;text-align:center;min-height:18px;margin-bottom:10px;"></div>
+    <button id="lockSubmit" class="btn" style="width:100%;text-align:center;border-color:var(--amber);color:var(--amber);">Entrar</button>
+    <div class="note" style="margin-top:20px;"><b>Nota:</b> esta es una clave de acceso básica del lado del cliente, pensada solo para evitar entradas accidentales — no es seguridad real, ya que al ser una app HTML de un solo archivo, cualquiera con acceso al código fuente puede ver la contraseña y los datos. No la uses para proteger información sensible.</div>
+  `;
+  setTimeout(()=>{
+    const input=document.getElementById('lockInput');
+    const err=document.getElementById('lockError');
+    const submit=document.getElementById('lockSubmit');
+    function tryUnlock(){
+      if((input.value||'').trim().toLowerCase() === ACCESS_PASSWORD){
+        state.unlocked = true; render();
+      } else {
+        err.textContent = 'Contraseña incorrecta. Inténtalo de nuevo.';
+        input.value=''; input.focus();
+      }
+    }
+    submit.onclick = tryUnlock;
+    input.onkeydown = (e)=>{ if(e.key==='Enter') tryUnlock(); };
+    input.focus();
+  },0);
+  return div;
+}
 
 function destroyCharts(){ chartRefs.forEach(c=>c.destroy()); chartRefs=[]; }
 
-function resetToLeagues(){ state.leagueKey=null; state.mode=null; state.entity=null; state.compareMode=false; state.compareSel=[]; state.teamCompareMode=false; state.teamCompareSel=[]; }
+function resetToLeagues(){ state.leagueKey=null; state.mode=null; state.entity=null; state.compareMode=false; state.compareSel=[]; state.teamCompareMode=false; state.teamCompareSel=[]; state.playersSubView='stats'; state.filters={minPts:'', minReb:'', minAst:'', minEfg:'', minPer:'', pos:'', team:''}; }
 
 function render(){
   destroyCharts();
   const app = document.getElementById('app');
   app.innerHTML='';
+  if(!state.unlocked){ app.appendChild(screenLock()); return; }
   app.appendChild(scoreboard());
   if(!state.season){ app.appendChild(screenSeason()); return; }
   if(!SEASONS_WITH_DATA.includes(state.season)){ app.appendChild(screenNoSeasonData()); return; }
@@ -971,6 +1034,7 @@ function render(){
   if(!state.mode){ app.appendChild(screenMode()); return; }
   if(state.entity && state.entity.type==='compare'){ app.appendChild(screenCompare()); app.appendChild(footerNote()); return; }
   if(state.entity && state.entity.type==='compareTeams'){ app.appendChild(screenCompareTeams()); app.appendChild(footerNote()); return; }
+  if(state.entity && state.entity.type==='filters'){ app.appendChild(screenFilters()); app.appendChild(footerNote()); return; }
   if(!state.entity){ app.appendChild(screenList()); return; }
   app.appendChild(screenDetail());
   app.appendChild(footerNote());
@@ -1188,6 +1252,7 @@ function screenList(){
     searchWrap.innerHTML=`
       <input id="playerSearch" type="text" placeholder="Buscar jugador/a por nombre o equipo..." style="flex:1;min-width:200px;padding:11px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-family:'Inter',sans-serif;font-size:14px;outline:none;">
       <button id="compareToggle" class="btn" style="flex-shrink:0;padding:11px 16px;${state.compareMode?'border-color:var(--amber);color:var(--amber);':''}">⇄ ${state.compareMode?'Cancelar comparación':'Comparar jugadores'}</button>
+      <button id="goFilters" class="btn" style="flex-shrink:0;padding:11px 16px;">🎚️ Filtros</button>
     `;
     div.appendChild(searchWrap);
 
@@ -1207,6 +1272,9 @@ function screenList(){
 
   if(state.mode==='jugadores'){
     setTimeout(()=>{
+      const goFilters=document.getElementById('goFilters');
+      if(goFilters) goFilters.onclick=()=>{ state.entity={type:'filters', data:{league:l}}; render(); };
+
       const input=document.getElementById('playerSearch');
       if(input){
         input.oninput=()=>{
@@ -1245,14 +1313,117 @@ function screenList(){
   return div;
 }
 
+// ---- Panel de filtros por métricas ----
+function filterPanelHTML(league){
+  const teams = [...new Set(league.players.map(p=>p.team))].sort();
+  const positions = [...new Set(league.players.map(p=>p.pos))].sort();
+  const f = state.filters;
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <div class="note">Filtra la lista de abajo por métricas mínimas y/o posición y equipo. Los filtros se combinan entre sí (aplican todos a la vez).</div>
+    <div class="stat-grid" style="margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
+      <div class="stat-cell" style="text-align:left;padding:10px 12px;">
+        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">PTS mínimos</label>
+        <input id="fMinPts" type="number" min="0" step="0.5" value="${f.minPts}" placeholder="p.ej. 10" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;">
+      </div>
+      <div class="stat-cell" style="text-align:left;padding:10px 12px;">
+        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">REB mínimos</label>
+        <input id="fMinReb" type="number" min="0" step="0.5" value="${f.minReb}" placeholder="p.ej. 5" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;">
+      </div>
+      <div class="stat-cell" style="text-align:left;padding:10px 12px;">
+        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">AST mínimas</label>
+        <input id="fMinAst" type="number" min="0" step="0.5" value="${f.minAst}" placeholder="p.ej. 3" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;">
+      </div>
+      <div class="stat-cell" style="text-align:left;padding:10px 12px;">
+        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">eFG% mínimo</label>
+        <input id="fMinEfg" type="number" min="0" max="100" step="1" value="${f.minEfg}" placeholder="p.ej. 50" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;">
+      </div>
+      <div class="stat-cell" style="text-align:left;padding:10px 12px;">
+        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">PER mínimo</label>
+        <input id="fMinPer" type="number" min="0" step="1" value="${f.minPer}" placeholder="p.ej. 15" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;">
+      </div>
+      <div class="stat-cell" style="text-align:left;padding:10px 12px;">
+        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Posición</label>
+        <select id="fPos" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;">
+          <option value="">Todas</option>
+          ${positions.map(p=>`<option value="${p}" ${f.pos===p?'selected':''}>${p}</option>`).join('')}
+        </select>
+      </div>
+      <div class="stat-cell" style="text-align:left;padding:10px 12px;grid-column:span 2;">
+        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Equipo</label>
+        <select id="fTeam" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;">
+          <option value="">Todos</option>
+          ${teams.map(t=>`<option value="${t}" ${f.team===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap;">
+      <span id="filterCount" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--amber);">${applyFilters(league.players).length} jugador${applyFilters(league.players).length===1?'':'es'}/as encontrados</span>
+      <button id="clearFilters" class="back-btn" style="margin:0;">Vaciar filtros</button>
+    </div>
+  `;
+  return div;
+}
+function applyFilters(players){
+  const f = state.filters;
+  return players.filter(p=>{
+    const adv = computeAdvanced(p);
+    if(f.minPts!=='' && adv.pts < parseFloat(f.minPts)) return false;
+    if(f.minReb!=='' && adv.trb < parseFloat(f.minReb)) return false;
+    if(f.minAst!=='' && p.ast < parseFloat(f.minAst)) return false;
+    if(f.minEfg!=='' && adv.efg < parseFloat(f.minEfg)) return false;
+    if(f.minPer!=='' && adv.per < parseFloat(f.minPer)) return false;
+    if(f.pos!=='' && p.pos !== f.pos) return false;
+    if(f.team!=='' && p.team !== f.team) return false;
+    return true;
+  });
+}
+
+function screenFilters(){
+  const div=document.createElement('div');
+  div.appendChild(backBtn(()=>{state.entity=null; render();},'← Volver al listado'));
+  const league = state.entity.data.league;
+  div.innerHTML += `<h1 class="headline">Filtros · ${league.name}</h1><p class="sub">Filtra jugadores/as por métricas mínimas, posición y equipo.</p>`;
+  div.appendChild(filterPanelHTML(league));
+  const grid=document.createElement('div'); grid.className='grid list'; grid.style.marginTop='16px'; grid.id='listGrid';
+  renderPlayerCards(grid, applyFilters(league.players));
+  div.appendChild(grid);
+
+  setTimeout(()=>{
+    const filterIds = ['fMinPts','fMinReb','fMinAst','fMinEfg','fMinPer','fPos','fTeam'];
+    const filterKeys = {fMinPts:'minPts',fMinReb:'minReb',fMinAst:'minAst',fMinEfg:'minEfg',fMinPer:'minPer',fPos:'pos',fTeam:'team'};
+    filterIds.forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el) return;
+      const handler=()=>{
+        state.filters[filterKeys[id]] = el.value;
+        const g=document.getElementById('listGrid');
+        const filtered = applyFilters(league.players);
+        g.innerHTML='';
+        const countEl=document.getElementById('filterCount');
+        if(countEl) countEl.textContent = `${filtered.length} jugador${filtered.length===1?'':'es'}/as encontrados`;
+        if(!filtered.length){ g.innerHTML='<div class="note">Ningún jugador/a cumple estos filtros. Prueba a relajarlos.</div>'; return; }
+        renderPlayerCards(g, filtered);
+      };
+      el.oninput=handler; el.onchange=handler;
+    });
+    const clearBtn=document.getElementById('clearFilters');
+    if(clearBtn) clearBtn.onclick=()=>{
+      state.filters={minPts:'',minReb:'',minAst:'',minEfg:'',minPer:'',pos:'',team:''};
+      render();
+    };
+  },0);
+
+  return div;
+}
+
 function renderPlayerCards(grid, players){
   players.forEach(pl=>{
     const c=document.createElement('button'); c.className='btn entity-card';
     const selected = state.compareMode && state.compareSel.includes(pl);
     if(selected) c.style.borderColor='var(--amber)', c.style.background='rgba(242,169,59,.08)';
     const avatar = pl.photo ? `<img src="${pl.photo}" alt="" style="width:38px;height:38px;border-radius:8px;object-fit:cover;flex-shrink:0;">` : `<div style="width:38px;height:38px;border-radius:8px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:13px;color:var(--ink-dim);flex-shrink:0;">${pl.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>`;
-    const logo = teamLogo(pl.team);
-    c.innerHTML=`<div style="display:flex;gap:10px;align-items:center;">${avatar}<div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:0;"><span class="badge ${pl.real?'real':''}">${state.compareMode ? (selected?'✓ Seleccionado':'Pinchar para elegir') : (pl.real?'PTS real':pl.pos)}</span><span class="name">${pl.name}</span></div></div><span class="meta" style="display:flex;align-items:center;gap:6px;margin-top:6px;">${logo?`<img src="${logo}" alt="" style="width:16px;height:16px;object-fit:contain;">`:''}${pl.team}${pl.nat?' · '+pl.nat:''}</span>`;
+    c.innerHTML=`<div style="display:flex;gap:10px;align-items:center;">${avatar}<div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:0;"><span class="badge ${pl.real?'real':''}">${state.compareMode ? (selected?'✓ Seleccionado':'Pinchar para elegir') : (pl.real?'PTS real':pl.pos)}</span><span class="name">${pl.name}</span></div></div><span class="meta" style="display:flex;align-items:center;gap:6px;margin-top:6px;">${teamBadgeHTML(pl.team,16)}${pl.team}${pl.nat?' · '+pl.nat:''}</span>`;
     c.onclick=()=>{
       if(state.compareMode){
         const idx = state.compareSel.indexOf(pl);
