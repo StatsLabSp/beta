@@ -372,10 +372,10 @@ const BIO_HW = {
   "Spencer Svejcar":{h:193,a:31},"Javi Lopez":{h:196,a:26},"Isaiah Stone Rivera Carroll":{h:196,a:24},
   "Sediq Garuba":{h:193,a:21},"Amari Kelly":{h:206,a:26},"Adria Domenech":{h:200,a:23},
   "Jordan Davis":{h:192,a:28},"Chayce Polynice":{h:210,a:24},"Alberto Martin":{h:184,a:30},
-  "Tyrell Roberts":{h:180,a:26},"Josep Peris":{h:192,a:25},"Colby Rogers":{h:195,a:null},
-  "Alvaro Martinez":{h:199,a:22},"Stymir Snaer Thrastarson":{h:null,a:null},"Omar Lo":{h:205,a:28},
-  "Joey Van Zegeren":{h:200,a:35},"Jonas Paukste":{h:224,a:25},"Jacob Round":{h:192,a:25},
-  "Toni Naspler":{h:195,a:22},"Bine Prepelic":{h:200,a:24},"Anton Bouzan":{h:198,a:30},
+  "Tyrell Roberts":{h:180,a:26},"Josep Peris":{h:192,a:25},"Colby Rogers":{h:195,a:24},
+  "Alvaro Martinez":{h:200,a:22},"Stymir Snaer Thrastarson":{h:200,a:24},"Omar Lo":{h:206,a:28},
+  "Joey Van Zegeren":{h:208,a:34},"Jonas Paukste":{h:225,a:25},"Jacob Round":{h:192,a:25},
+  "Toni Naspler":{h:197,a:22},"Bine Prepelic":{h:200,a:24},"Anton Bouzan":{h:198,a:30},
   "David Kristensen":{h:203,a:27},
   "Brian Vazquez":{h:190,a:31},"Pedro Bombino":{h:206,a:25},"Lucas Capalbo":{h:175,a:25},
   "Lysander Bracey":{h:199,a:29},"Osvaldas Matulionis":{h:186,a:34},"Jon Aramburu":{h:200,a:33},
@@ -442,6 +442,8 @@ const BIO_FULL = {
   "Vasilije Vucetic":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/4/0/0/1400_4.jpg", birth:"04/05/1996", birthplace:null, nat:"🇷🇸 Serbia", pos:"Pívot", h:207},
   "Alvaro Munoz":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/2/0/0/1200_4.jpg", birth:"25/11/1990", birthplace:null, nat:"🇪🇸 España", pos:"Alero", h:196},
   "Gilad Levy":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/4/0/4/1404_4.jpg", birth:"03/07/2002", birthplace:null, nat:"🇮🇱 Israel", pos:"Pívot", h:216},
+  // Caja Rural CB Zamora — foto real (metadato og:image de la noticia de fichaje en cbzamora.com), resto de la plantilla de la web oficial sin foto extraíble (carga diferida por JavaScript)
+  "Alvaro Martinez":{photo:"https://cbzamora.com/wp-content/uploads/2025/07/afba6420-66f4-4600-b2fc-edf003a1aada.jpg", birth:"24/01/2003", birthplace:"Zaragoza", nat:"🇪🇸 España", pos:"Alero", h:200},
   "Philip Scrubb":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/sans-titre-1-1ed4bee6-97a9-6bca-abdd-d9424302d95e.jpg", birth:"27/11/1992", birthplace:"Canadá", nat:"🇨🇦 Canadá", pos:"Escolta", h:192},
   "Tyrell Roberts":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/tyrell-roberts-1-1ee83096-c0e8-613c-b34c-39fbd37d1a77.png", birth:"01/01/1999", birthplace:"Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Base", h:180},
   "Mustapha Heron":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/mustapha-hero-1ef0a50a-69d8-62b6-bae4-195e8ca40332.png", birth:"12/12/1997", birthplace:"Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Alero", h:197}
@@ -977,7 +979,7 @@ function setActiveSeason(season){
   LEAGUES = (season === '2026-2027') ? LEAGUES_2026_2027 : LEAGUES_2025_2026;
 }
 
-let state = { unlocked:false, season:null, seasonMenuOpen:false, leagueKey:null, mode:null, entity:null, compareMode:false, compareSel:[], teamCompareMode:false, teamCompareSel:[], playersSubView:'stats', filters:{minPts:'', minReb:'', minAst:'', minEfg:'', minPer:'', pos:'', team:''} };
+let state = { unlocked:false, season:null, seasonMenuOpen:false, leagueKey:null, mode:null, entity:null, compareMode:false, compareSel:[], teamCompareMode:false, teamCompareSel:[], rankMetric:'pts' };
 // Aplicar biografía/posición a los jugadores estáticos (Segunda FEB, LF Endesa, LF Challenge)
 ['segunda_feb','lf_endesa','lf_challenge'].forEach(k=>{ LEAGUES[k].players.forEach(attachBio); });
 let chartRefs = [];
@@ -1020,7 +1022,7 @@ function screenLock(){
 
 function destroyCharts(){ chartRefs.forEach(c=>c.destroy()); chartRefs=[]; }
 
-function resetToLeagues(){ state.leagueKey=null; state.mode=null; state.entity=null; state.compareMode=false; state.compareSel=[]; state.teamCompareMode=false; state.teamCompareSel=[]; state.playersSubView='stats'; state.filters={minPts:'', minReb:'', minAst:'', minEfg:'', minPer:'', pos:'', team:''}; }
+function resetToLeagues(){ state.leagueKey=null; state.mode=null; state.entity=null; state.compareMode=false; state.compareSel=[]; state.teamCompareMode=false; state.teamCompareSel=[]; state.rankMetric='pts'; }
 
 function render(){
   destroyCharts();
@@ -1314,107 +1316,79 @@ function screenList(){
 }
 
 // ---- Panel de filtros por métricas ----
-function filterPanelHTML(league){
-  const teams = [...new Set(league.players.map(p=>p.team))].sort();
-  const positions = [...new Set(league.players.map(p=>p.pos))].sort();
-  const f = state.filters;
-  const div = document.createElement('div');
-  div.innerHTML = `
-    <div class="note">Filtra la lista de abajo por métricas mínimas y/o posición y equipo. Los filtros se combinan entre sí (aplican todos a la vez).</div>
-    <div class="stat-grid" style="margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));">
-      <div class="stat-cell" style="text-align:left;padding:10px 12px;">
-        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">PTS mínimos</label>
-        <input id="fMinPts" type="number" min="0" step="0.5" value="${f.minPts}" placeholder="p.ej. 10" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;">
-      </div>
-      <div class="stat-cell" style="text-align:left;padding:10px 12px;">
-        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">REB mínimos</label>
-        <input id="fMinReb" type="number" min="0" step="0.5" value="${f.minReb}" placeholder="p.ej. 5" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;">
-      </div>
-      <div class="stat-cell" style="text-align:left;padding:10px 12px;">
-        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">AST mínimas</label>
-        <input id="fMinAst" type="number" min="0" step="0.5" value="${f.minAst}" placeholder="p.ej. 3" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;">
-      </div>
-      <div class="stat-cell" style="text-align:left;padding:10px 12px;">
-        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">eFG% mínimo</label>
-        <input id="fMinEfg" type="number" min="0" max="100" step="1" value="${f.minEfg}" placeholder="p.ej. 50" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;">
-      </div>
-      <div class="stat-cell" style="text-align:left;padding:10px 12px;">
-        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">PER mínimo</label>
-        <input id="fMinPer" type="number" min="0" step="1" value="${f.minPer}" placeholder="p.ej. 15" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'IBM Plex Mono',monospace;font-size:13px;">
-      </div>
-      <div class="stat-cell" style="text-align:left;padding:10px 12px;">
-        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Posición</label>
-        <select id="fPos" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;">
-          <option value="">Todas</option>
-          ${positions.map(p=>`<option value="${p}" ${f.pos===p?'selected':''}>${p}</option>`).join('')}
-        </select>
-      </div>
-      <div class="stat-cell" style="text-align:left;padding:10px 12px;grid-column:span 2;">
-        <label style="display:block;font-size:10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Equipo</label>
-        <select id="fTeam" style="width:100%;padding:7px 8px;background:var(--panel);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;">
-          <option value="">Todos</option>
-          ${teams.map(t=>`<option value="${t}" ${f.team===t?'selected':''}>${t}</option>`).join('')}
-        </select>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap;">
-      <span id="filterCount" style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--amber);">${applyFilters(league.players).length} jugador${applyFilters(league.players).length===1?'':'es'}/as encontrados</span>
-      <button id="clearFilters" class="back-btn" style="margin:0;">Vaciar filtros</button>
-    </div>
-  `;
-  return div;
-}
-function applyFilters(players){
-  const f = state.filters;
-  return players.filter(p=>{
-    const adv = computeAdvanced(p);
-    if(f.minPts!=='' && adv.pts < parseFloat(f.minPts)) return false;
-    if(f.minReb!=='' && adv.trb < parseFloat(f.minReb)) return false;
-    if(f.minAst!=='' && p.ast < parseFloat(f.minAst)) return false;
-    if(f.minEfg!=='' && adv.efg < parseFloat(f.minEfg)) return false;
-    if(f.minPer!=='' && adv.per < parseFloat(f.minPer)) return false;
-    if(f.pos!=='' && p.pos !== f.pos) return false;
-    if(f.team!=='' && p.team !== f.team) return false;
-    return true;
-  });
-}
+// ---- Métricas avanzadas disponibles para el ranking ----
+const METRIC_OPTIONS = [
+  {key:'pts', label:'Puntos (PTS)', suffix:'', get:(p,a)=>a.pts},
+  {key:'trb', label:'Rebotes (REB)', suffix:'', get:(p,a)=>a.trb},
+  {key:'ast', label:'Asistencias (AST)', suffix:'', get:(p,a)=>p.ast},
+  {key:'stl', label:'Robos (STL)', suffix:'', get:(p,a)=>p.stl},
+  {key:'blk', label:'Tapones (BLK)', suffix:'', get:(p,a)=>p.blk},
+  {key:'tov', label:'Pérdidas (TOV)', suffix:'', get:(p,a)=>p.tov},
+  {key:'efg', label:'eFG% (tiro efectivo)', suffix:'%', get:(p,a)=>a.efg},
+  {key:'ts', label:'TS% (True Shooting)', suffix:'%', get:(p,a)=>a.ts},
+  {key:'usg', label:'USG% (uso de posesiones)', suffix:'%', get:(p,a)=>a.usg},
+  {key:'astPct', label:'AST%', suffix:'%', get:(p,a)=>a.astPct},
+  {key:'trbPct', label:'TRB% (rebote total)', suffix:'%', get:(p,a)=>a.trbPct},
+  {key:'tovPct', label:'TOV% (pérdidas)', suffix:'%', get:(p,a)=>a.tovPct},
+  {key:'ortg', label:'ORtg (ofensivo /100 pos.)', suffix:'', get:(p,a)=>a.ortg},
+  {key:'drtg', label:'DRtg (defensivo /100 pos.)', suffix:'', get:(p,a)=>a.drtg},
+  {key:'netrtg', label:'Net Rating', suffix:'', get:(p,a)=>a.netrtg},
+  {key:'per', label:'PER', suffix:'', get:(p,a)=>a.per}
+];
 
 function screenFilters(){
   const div=document.createElement('div');
   div.appendChild(backBtn(()=>{state.entity=null; render();},'← Volver al listado'));
   const league = state.entity.data.league;
-  div.innerHTML += `<h1 class="headline">Filtros · ${league.name}</h1><p class="sub">Filtra jugadores/as por métricas mínimas, posición y equipo.</p>`;
-  div.appendChild(filterPanelHTML(league));
-  const grid=document.createElement('div'); grid.className='grid list'; grid.style.marginTop='16px'; grid.id='listGrid';
-  renderPlayerCards(grid, applyFilters(league.players));
+  div.innerHTML += `<h1 class="headline">Ranking por métrica · ${league.name}</h1><p class="sub">Elige una métrica avanzada y verás a todos los jugadores/as ordenados de mayor a menor.</p>`;
+
+  const selWrap=document.createElement('div'); selWrap.style.marginBottom='18px';
+  selWrap.innerHTML = `
+    <select id="metricSelect" style="width:100%;padding:13px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-family:'Inter',sans-serif;font-size:14.5px;">
+      ${METRIC_OPTIONS.map(m=>`<option value="${m.key}" ${state.rankMetric===m.key?'selected':''}>${m.label}</option>`).join('')}
+    </select>
+  `;
+  div.appendChild(selWrap);
+
+  const grid=document.createElement('div'); grid.className='grid list'; grid.style.marginTop='4px'; grid.id='listGrid'; grid.style.gridTemplateColumns='1fr';
   div.appendChild(grid);
+  renderRanking(grid, league.players, state.rankMetric);
 
   setTimeout(()=>{
-    const filterIds = ['fMinPts','fMinReb','fMinAst','fMinEfg','fMinPer','fPos','fTeam'];
-    const filterKeys = {fMinPts:'minPts',fMinReb:'minReb',fMinAst:'minAst',fMinEfg:'minEfg',fMinPer:'minPer',fPos:'pos',fTeam:'team'};
-    filterIds.forEach(id=>{
-      const el=document.getElementById(id);
-      if(!el) return;
-      const handler=()=>{
-        state.filters[filterKeys[id]] = el.value;
+    const sel=document.getElementById('metricSelect');
+    if(sel){
+      sel.onchange=()=>{
+        state.rankMetric = sel.value;
         const g=document.getElementById('listGrid');
-        const filtered = applyFilters(league.players);
         g.innerHTML='';
-        const countEl=document.getElementById('filterCount');
-        if(countEl) countEl.textContent = `${filtered.length} jugador${filtered.length===1?'':'es'}/as encontrados`;
-        if(!filtered.length){ g.innerHTML='<div class="note">Ningún jugador/a cumple estos filtros. Prueba a relajarlos.</div>'; return; }
-        renderPlayerCards(g, filtered);
+        renderRanking(g, league.players, sel.value);
       };
-      el.oninput=handler; el.onchange=handler;
-    });
-    const clearBtn=document.getElementById('clearFilters');
-    if(clearBtn) clearBtn.onclick=()=>{
-      state.filters={minPts:'',minReb:'',minAst:'',minEfg:'',minPer:'',pos:'',team:''};
-      render();
-    };
+    }
   },0);
 
   return div;
+}
+
+function renderRanking(grid, players, metricKey){
+  const metric = METRIC_OPTIONS.find(m=>m.key===metricKey) || METRIC_OPTIONS[0];
+  const ranked = players.map(p=>({p, value: metric.get(p, computeAdvanced(p))})).sort((a,b)=>b.value-a.value);
+  ranked.forEach((r,i)=>{
+    const pl=r.p;
+    const c=document.createElement('button'); c.className='btn entity-card';
+    c.style.flexDirection='row'; c.style.alignItems='center';
+    const avatar = pl.photo ? `<img src="${pl.photo}" alt="" style="width:38px;height:38px;border-radius:8px;object-fit:cover;flex-shrink:0;">` : `<div style="width:38px;height:38px;border-radius:8px;background:var(--panel-2);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:13px;color:var(--ink-dim);flex-shrink:0;">${pl.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>`;
+    c.innerHTML = `
+      <span style="font-family:'IBM Plex Mono',monospace;color:var(--ink-dim);font-size:13px;width:26px;flex-shrink:0;">${i+1}.</span>
+      ${avatar}
+      <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-width:0;margin-left:10px;">
+        <span class="name">${pl.name}</span>
+        <span class="meta">${pl.team}${pl.real?' · <span style="color:var(--teal);">PTS real</span>':''}</span>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:20px;color:var(--amber);font-weight:600;flex-shrink:0;">${r.value.toFixed(1)}${metric.suffix}</span>
+    `;
+    c.onclick=()=>{ state.entity={type:'jugador', data:pl}; render(); };
+    grid.appendChild(c);
+  });
 }
 
 function renderPlayerCards(grid, players){
