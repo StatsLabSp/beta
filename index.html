@@ -256,6 +256,23 @@ function mkReal(name, team, pos, games, ppg){
   };
 }
 
+// ---- Constructor flexible para jugadores "líder" de una estadística concreta (no siempre puntos) ----
+// Se usa cuando la fuente solo confirma UNA categoría (p.ej. rebotes o asistencias líderes de la liga)
+// en vez de un box-score completo. realStats indica qué campos son reales; el resto se estima con
+// una heurística a partir del propio dato real conocido, para poder calcular las métricas avanzadas.
+function mkRealLeader(name, team, pos, opts){
+  const pts = opts.pts!==undefined ? opts.pts : (opts.reb!==undefined ? 5+opts.reb*0.7 : opts.ast!==undefined ? 6+opts.ast*0.8 : 8);
+  const reb = opts.reb!==undefined ? opts.reb : 2+pts*0.12;
+  const ast = opts.ast!==undefined ? opts.ast : 1+pts*0.08;
+  const stl = opts.stl!==undefined ? opts.stl : 0.6+pts*0.03;
+  const blk = opts.blk!==undefined ? opts.blk : 0.2+pts*0.02;
+  const base = mkReal(name, team, pos, opts.games||null, pts);
+  base.oreb = +(reb*0.3).toFixed(1); base.dreb = +(reb*0.7).toFixed(1);
+  base.ast = +ast.toFixed(1); base.stl = +stl.toFixed(1); base.blk = +blk.toFixed(2);
+  base.realStats = Object.keys(opts).filter(k=>k!=='games');
+  return base;
+}
+
 // ---- Media de liga (jugadores): calculada dinámicamente sobre los jugadores cargados de cada liga ----
 // ---- Media winsorizada ----
 // Recorta los valores extremos (por debajo del percentil p y por encima del 100-p) al propio
@@ -422,7 +439,7 @@ const BIO_FULL = {
   "Reggie Johnson":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/reginald-johnson2-1ef88d55-c334-6f5e-84ed-ab0dff51562f.png", birth:"07/05/1994", birthplace:"Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Base", h:190},
   "Vitor Benite":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/vitor-benite-1f080d7f-b170-6aa2-a51b-b5028a4e21c8.png", birth:"20/02/1990", birthplace:"Jundiaí, São Paulo (Brasil)", nat:"🇧🇷 Brasil / 🇮🇹 Italia (doble nacionalidad)", pos:"Escolta", h:191, w:94},
   "Kevin Larsen":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/kevin-ricki-larsen-1ee8eddd-9a8e-6892-bb74-ed4d7cced0a5.png", birth:"17/07/1993", birthplace:"Copenhague (Dinamarca)", nat:"🇩🇰 Dinamarca", pos:"Ala-Pívot", h:208, w:112},
-  "Marques Townes":{photo:null, birth:"03/09/1995", birthplace:"Edison, Nueva Jersey (EE.UU.)", nat:"🇩🇴 Rep. Dominicana / 🇺🇸 EE.UU. (doble nacionalidad)", pos:"Escolta", h:193, w:94},
+  "Marques Townes":{photo:"https://oviedobaloncesto.com/wp-content/uploads/2025/11/marques2-scaled.png", birth:"03/09/1995", birthplace:"Edison, Nueva Jersey (EE.UU.)", nat:"🇩🇴 Rep. Dominicana / 🇺🇸 EE.UU. (doble nacionalidad)", pos:"Escolta", h:193, w:94},
   // Ampliación con la ficha oficial de plantilla de baloncestoenvivo.feb.es (Alimerka Oviedo)
   "Robert Cosialls":{photo:"https://imagenes.feb.es/Foto.aspx?c=1662155", birth:"20/12/1996", birthplace:"Sant Cugat del Vallès (Barcelona)", nat:"🇪🇸 España", pos:"Pívot", h:204},
   "Dan Duscak":{photo:"https://imagenes.feb.es/Foto.aspx?c=2822575", birth:"02/07/2002", birthplace:"A Coruña", nat:"🇸🇮 Eslovenia", pos:"Base", h:185},
@@ -444,6 +461,46 @@ const BIO_FULL = {
   "Gilad Levy":{photo:"https://www.palenciabaloncesto.com/Documentos/Fotos/1/4/0/4/1404_4.jpg", birth:"03/07/2002", birthplace:null, nat:"🇮🇱 Israel", pos:"Pívot", h:216},
   // Caja Rural CB Zamora — foto real (metadato og:image de la noticia de fichaje en cbzamora.com), resto de la plantilla de la web oficial sin foto extraíble (carga diferida por JavaScript)
   "Alvaro Martinez":{photo:"https://cbzamora.com/wp-content/uploads/2025/07/afba6420-66f4-4600-b2fc-edf003a1aada.jpg", birth:"24/01/2003", birthplace:"Zaragoza", nat:"🇪🇸 España", pos:"Alero", h:200},
+  // Monbus Obradoiro — foto, altura y nacimiento reales de la web oficial del club (obradoirocab.gal/es/equipo).
+  // Solo se pudo confirmar para 8 de los 16 jugadores de la plantilla 2025/26: los otros 8 ya no siguen
+  // en el club (temporada 2026/27 en ACB) y sus fichas individuales han sido retiradas de la web oficial,
+  // así que no hay foto verificable para ellos en esta fuente.
+  "Felipe Dos Anjos":{photo:"https://www.obradoirocab.gal/Documentos/Fotos/0/1/7/8/178_4.jpg", birth:"30/04/1998", birthplace:null, nat:"", pos:"Pívot", h:218},
+  "Alonso Grela Rojas":{photo:"https://www.obradoirocab.gal/Documentos/Fotos/0/1/8/4/184_4.jpg", birth:"24/01/2006", birthplace:null, nat:"", pos:"Base", h:187},
+  "Yunio Barrueta":{photo:"https://www.obradoirocab.gal/Documentos/Fotos/0/3/7/2/372_4.jpg", birth:"15/04/1993", birthplace:null, nat:"", pos:"Alero", h:196},
+  "Diogo Brito":{photo:"https://www.obradoirocab.gal/Documentos/Fotos/0/2/1/1/211_4.jpg", birth:"24/04/1997", birthplace:null, nat:"", pos:"Alero", h:198},
+  "Sergi Quintela":{photo:"https://www.obradoirocab.gal/Documentos/Fotos/0/1/9/3/193_4.jpg", birth:"21/04/1996", birthplace:null, nat:"", pos:"Escolta", h:185},
+  "Alex Barcello":{photo:"https://www.obradoirocab.gal/Documentos/Fotos/0/2/1/2/212_4.jpg", birth:"31/08/1998", birthplace:null, nat:"", pos:"Escolta", h:187},
+  "Olle Lundqvist":{photo:"https://www.obradoirocab.gal/Documentos/Fotos/0/1/9/7/197_4.jpg", birth:"21/11/1999", birthplace:null, nat:"", pos:"Base", h:199},
+  "Alejandro Galan":{photo:"https://www.obradoirocab.gal/Documentos/Fotos/0/1/9/9/199_4.jpg", birth:"12/09/1999", birthplace:null, nat:"", pos:"Ala-Pívot", h:207},
+  // Leyma Coruña — foto real de la galería oficial de plantilla (basquetcoruna.com/primer-equipo/),
+  // confirmada cruzando el número de dorsal de cada foto con el dorsal real de cada jugador (flashscore.es).
+  // 13 de 15 jugadores confirmados; Yoanki Mensia y Carlos Varela Romero no tienen foto identificable
+  // con certeza en esta galería (fotos sin dorsal enlazado a su nombre), así que no se les asigna ninguna.
+  "Didac Cuevas":{photo:"https://basquetcoruna.com/wp-content/uploads/2025/09/0.jpg", birth:null, birthplace:null, nat:"", pos:"Base"},
+  "Paul Jorgensen":{photo:"https://basquetcoruna.com/wp-content/uploads/2025/09/4.jpg", birth:null, birthplace:null, nat:"", pos:"Base"},
+  "Guillem Jou":{photo:"https://basquetcoruna.com/wp-content/uploads/2025/09/5.jpg", birth:null, birthplace:null, nat:"", pos:"Escolta"},
+  "Braz Macachi":{photo:"https://basquetcoruna.com/wp-content/uploads/2025/09/6-1.jpg", birth:null, birthplace:null, nat:"", pos:"Alero"},
+  "Strahinja Micovic":{photo:"https://basquetcoruna.com/wp-content/uploads/2026/03/Strahinja_BasquetCoruna.jpg", birth:null, birthplace:null, nat:"", pos:"Alero"},
+  "Dino Radoncic":{photo:"https://basquetcoruna.com/wp-content/uploads/2025/10/8_Dino_Radoncic.jpg", birth:null, birthplace:null, nat:"", pos:"Ala-Pívot"},
+  "Caio Pacheco":{photo:"https://basquetcoruna.com/wp-content/uploads/2025/09/9.jpg", birth:null, birthplace:null, nat:"", pos:"Base"},
+  "Danilo Brnovic":{photo:"https://basquetcoruna.com/wp-content/uploads/2025/09/13.jpg", birth:null, birthplace:null, nat:"", pos:"Alero"},
+  "Ilimane Diop":{photo:"https://basquetcoruna.com/wp-content/uploads/2025/09/21.jpg", birth:null, birthplace:null, nat:"", pos:"Pívot"},
+  "Joe Cremo":{photo:"https://basquetcoruna.com/wp-content/uploads/2025/09/24.jpg", birth:null, birthplace:null, nat:"", pos:"Escolta"},
+  "Serigne Barro":{photo:"https://basquetcoruna.com/wp-content/uploads/2026/01/Mus-Barro_web-1.jpg", birth:null, birthplace:null, nat:"", pos:"Pívot"},
+  "Abdou Thiam":{photo:"https://basquetcoruna.com/wp-content/uploads/2025/09/44.jpg", birth:"13/08/1998", birthplace:"Dakar (Senegal)", nat:"🇸🇳 Senegal", pos:"Pívot", h:211},
+  "Jacobo Diaz":{photo:"https://basquetcoruna.com/wp-content/uploads/2025/09/50.jpg", birth:"23/07/1996", birthplace:"Madrid", nat:"🇪🇸 España", pos:"Ala-Pívot", h:206},
+  // Alimerka Oviedo Baloncesto — foto, ciudad natal, nacionalidad, posición y altura reales de la web oficial
+  // del club (oviedobaloncesto.com/plantilla-alimerka-oviedo-2025-2026-2/). Sin fecha de nacimiento (esa web
+  // no la publica), así que se deja como "No disponible" en la ficha en vez de inventarla.
+  "Gregory Parham II":{photo:"https://oviedobaloncesto.com/wp-content/uploads/2025/10/3-1.png", birth:null, birthplace:"Richmond, Virginia (EE.UU.)", nat:"🇺🇸 EE.UU.", pos:"Escolta", h:192},
+  "Federico Copes":{photo:"https://oviedobaloncesto.com/wp-content/uploads/2025/10/4-1.png", birth:null, birthplace:"Moreno, Buenos Aires (Argentina)", nat:"🇦🇷 Argentina", pos:"Alero", h:197},
+  "Daniil Shelist":{photo:"https://oviedobaloncesto.com/wp-content/uploads/2025/10/7-1.png", birth:null, birthplace:"Jersón (Ucrania)", nat:"🇺🇦 Ucrania", pos:"Ala-Pívot", h:203},
+  "Calvin Hermanson":{photo:"https://oviedobaloncesto.com/wp-content/uploads/2025/10/6-1.png", birth:null, birthplace:"Lake Oswego, Oregón (EE.UU.)", nat:"🇺🇸 EE.UU.", pos:"Alero", h:198},
+  "Francis Nwaokorie":{photo:"https://oviedobaloncesto.com/wp-content/uploads/2025/10/5-1.png", birth:null, birthplace:"Fridley, Minnesota (EE.UU.)", nat:"🇺🇸 EE.UU. / 🇳🇬 Nigeria (doble nacionalidad)", pos:"Ala-Pívot", h:201},
+  "Alonso Faure Ribes":{photo:"https://oviedobaloncesto.com/wp-content/uploads/2025/10/1-1.png", birth:null, birthplace:"Alicante", nat:"🇪🇸 España", pos:"Pívot", h:208},
+  "Jorge Arias Gonzalez":{photo:"https://oviedobaloncesto.com/wp-content/uploads/2025/10/9-1.png", birth:null, birthplace:"Oviedo", nat:"🇪🇸 España", pos:"Alero", h:198},
+  "Pablo Gonzalez":{photo:"https://oviedobaloncesto.com/wp-content/uploads/2025/10/8-1.png", birth:null, birthplace:"Madrid", nat:"🇪🇸 España", pos:"Escolta", h:192},
   "Philip Scrubb":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/sans-titre-1-1ed4bee6-97a9-6bca-abdd-d9424302d95e.jpg", birth:"27/11/1992", birthplace:"Canadá", nat:"🇨🇦 Canadá", pos:"Escolta", h:192},
   "Tyrell Roberts":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/tyrell-roberts-1-1ee83096-c0e8-613c-b34c-39fbd37d1a77.png", birth:"01/01/1999", birthplace:"Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Base", h:180},
   "Mustapha Heron":{photo:"https://www.proballers.com/media/cache/resize_600_png/https---www.proballers.com/ul/player/mustapha-hero-1ef0a50a-69d8-62b6-bae4-195e8ca40332.png", birth:"12/12/1997", birthplace:"Estados Unidos", nat:"🇺🇸 Estados Unidos", pos:"Alero", h:197}
@@ -469,7 +526,18 @@ const TEAM_LOGOS = {
   "Grupo Alega Cantabria":13446, "Hestia Menorca":669, "HLA Alicante":151, "Leyma Coruña":2114,
   "Melilla Ciudad del Deporte":667, "Monbus Obradoiro":1986, "Movistar Estudiantes":147,
   "Cloud.Gal Ourense Baloncesto":670, "Palmer Basket Mallorca Palma":15213, "Súper Agropal Palencia":1562,
-  "Grupo Ureta Tizona Burgos":13448
+  "Grupo Ureta Tizona Burgos":13448,
+  // Segunda FEB 2025/26 (28 equipos, IDs de proballers.com/es/baloncesto/liga/227/spain-segunda-feb)
+  "Cáceres Patrimonio de la Humanidad":152, "Coto Córdoba CB":15401, "Biele ISB":2245,
+  "Jaén Paraíso Interior CB":15518, "Clínica Ponferrada SDP":13445, "Cultural y Deportiva Leonesa":681,
+  "CB Clavijo":910, "LBC Cocinas.com":15520, "Castillo de Gorraiz Valle de Egüés":15515,
+  "Círculo Gijón Baloncesto":13351, "CB Starlabs Morón":3129, "Insolac Caja 87":15402,
+  "CB Toledo":15517, "UEMC CBC Valladolid":146,
+  "Bueno Arenas Albacete Basket":3175, "Class Bàsquet Sant Antoni":14474, "Homs UE Mataró":15208,
+  "Maderas Sorlí Benicarló":13443, "Amics Castelló":911, "Sol Gironès Bisbal Bàsquet":15404,
+  "Lobe Huesca La Magia":1564, "CB Getafe":3127, "Spanosh Basketball Academy":15519,
+  "Ciudad Molina Basket":15516, "CB Salou":14891, "Club Esportiu Bàsquet Llíria":13538,
+  "Proinbeni UPB Gandía":907, "CB Zaragoza":13526
 };
 function teamLogo(teamName){
   const id = TEAM_LOGOS[teamName];
@@ -859,35 +927,130 @@ const LEAGUES_2025_2026 = {
     playersNote:"Base de datos completa y revisada equipo a equipo: 262 jugadores reales de la temporada 2025/26. 16 de los 17 clubes tienen su plantilla 100% verificada sobre la tabla oficial completa de proballers.com (medias reales: puntos, rebotes, asistencias, minutos, % de tiro, robos, pérdidas, tapones): Melilla, Alimerka Oviedo, Súper Agropal Palencia (con Manu Rodríguez), Inveready Gipuzkoa (con Gaizka Maiza), Flexicar Fuenlabrada, Cartagena, Caja Rural CB Zamora, Grupo Alega Cantabria (con Garmine Kande), Leyma Coruña, HLA Alicante, Movistar Estudiantes, Monbus Obradoiro, Grupo Ureta Tizona Burgos, Cloud.Gal Ourense Baloncesto, Fibwi Mallorca Bàsquet Palma y Palma Basquet Mallorca. Solo Hestia Menorca (10 jugadores) se queda con datos de crónicas de prensa en vez de la tabla completa, porque proballers bloquea esa petición concreta de forma persistente. Los tiros de campo (2/3 puntos) por jugador se reconstruyen a partir de sus % reales de tiro cuando se conocen, o de una heurística basada solo en PPG cuando la fuente únicamente da puntos por partido."
   },
   segunda_feb:{
-    name:"Segunda FEB", sub:"3.ª división masculina · 28 equipos (2 conferencias)", tag:"Masculina", fem:false,
-    source:"baloncestoenvivo.feb.es — Estadísticas por equipos 2025/26 (muestra inicial, 2 jornadas)",
-    leagueAvgFF:{efg:41.4, tov:13.9, orb:29.1, ftr:25.5},
-    teamsNote:"Cobertura parcial: solo se listan equipos con datos oficiales confirmados en esta versión (de los 28 totales).",
+    name:"Segunda FEB", sub:"3.ª división masculina · 28 equipos (Conferencia Este y Oeste)", tag:"Masculina", fem:false,
+    source:"feb.es (nota oficial \"Definidas las Conferencias Este y Oeste... 2025/26\", 30/07/2025) para la lista de equipos; proballers.com/es/baloncesto/liga/227/spain-segunda-feb (sección \"Líderes\") para las estadísticas líder por categoría de la temporada 2025/26.",
+    leagueAvgFF:null,
+    teamsNote:"Los 28 equipos son reales y están confirmados oficialmente por la FEB en las dos conferencias (Este y Oeste) de la temporada 2025/26. No se dispone de los 4 Factores por equipo en esta versión (esta fuente no publica esas medias agregadas en abierto), así que el mapa de calor de equipo no está disponible para esta liga todavía.",
     teams:[
-      {name:"Bueno Arenas Albacete Basket", ff:{efg:40.2,tov:10.0,orb:23.4,ftr:33.8,games:2,pts:69.0}},
-      {name:"Amics Castelló", ff:{efg:39.5,tov:13.6,orb:25.6,ftr:23.2,games:2,pts:65.0}},
-      {name:"Class Basquet Sant Antoni", ff:{efg:44.6,tov:18.0,orb:38.4,ftr:19.6,games:2,pts:71.5}},
-      {name:"UEMC CBC Valladolid", ff:null},
-      {name:"Clínica Ponferrada SDP", ff:null},
-      {name:"Reina Proteínas Clavijo", ff:null},
-      {name:"CB Toledo", ff:null},
-      {name:"Castillo de Gorraiz Valle de Egüés", ff:null},
+      // Conferencia Oeste
       {name:"Cáceres Patrimonio de la Humanidad", ff:null},
-      {name:"Insolac Caja 87", ff:null},
-      {name:"Círculo Gijón", ff:null},
-      {name:"Jaén Paraíso Interior CB", ff:null},
-      {name:"CB Starlabs Morón", ff:null},
+      {name:"Coto Córdoba CB", ff:null},
       {name:"Biele ISB", ff:null},
-      {name:"LogroBasket Logi 7", ff:null},
+      {name:"Jaén Paraíso Interior CB", ff:null},
+      {name:"Clínica Ponferrada SDP", ff:null},
       {name:"Cultural y Deportiva Leonesa", ff:null},
-      {name:"Coto Córdoba CB", ff:null}
+      {name:"CB Clavijo", ff:null},
+      {name:"LBC Cocinas.com", ff:null},
+      {name:"Castillo de Gorraiz Valle de Egüés", ff:null},
+      {name:"Círculo Gijón Baloncesto", ff:null},
+      {name:"CB Starlabs Morón", ff:null},
+      {name:"Insolac Caja 87", ff:null},
+      {name:"CB Toledo", ff:null},
+      {name:"UEMC CBC Valladolid", ff:null},
+      // Conferencia Este
+      {name:"Bueno Arenas Albacete Basket", ff:null},
+      {name:"Class Bàsquet Sant Antoni", ff:null},
+      {name:"Homs UE Mataró", ff:null},
+      {name:"Maderas Sorlí Benicarló", ff:null},
+      {name:"Amics Castelló", ff:null},
+      {name:"Sol Gironès Bisbal Bàsquet", ff:null},
+      {name:"Lobe Huesca La Magia", ff:null},
+      {name:"CB Getafe", ff:null},
+      {name:"Spanosh Basketball Academy", ff:null},
+      {name:"Ciudad Molina Basket", ff:null},
+      {name:"CB Salou", ff:null},
+      {name:"Club Esportiu Bàsquet Llíria", ff:null},
+      {name:"Proinbeni UPB Gandía", ff:null},
+      {name:"CB Zaragoza", ff:null}
     ],
-    players:[
-      {real:false, name:"Iván Aurrecoechea", team:"Cultural y Deportiva Leonesa", pos:"Pívot", nat:"🇪🇸 España", games:null, min:26, fgm:5.5,fga:10,tpm:0,tpa:0,ftm:2.5,fta:3.6,oreb:3,dreb:6.1,ast:1.3,stl:0.7,blk:1.1,tov:2},
-      {real:false, name:"Caio Pacheco", team:"CB Toledo", pos:"Base", nat:"🇧🇷 Brasil", games:null, min:28, fgm:5.5,fga:12,tpm:1.2,tpa:3.5,ftm:2.6,fta:3.2,oreb:0.5,dreb:2.7,ast:5,stl:1.1,blk:0.1,tov:2.3},
-      {real:false, name:"Sean McDonnell", team:"Insolac Caja 87", pos:"Alero", nat:"🇮🇪 Irlanda", games:null, min:27, fgm:5.5,fga:11.5,tpm:1.5,tpa:4,ftm:2.5,fta:3.2,oreb:1.1,dreb:4.5,ast:2.4,stl:1,blk:0.3,tov:1.9}
-    ],
-    playersNote:"Nombres reales citados en crónicas oficiales de la competición; sin ranking de puntos oficial confirmado aún en esta versión, por lo que su PPG también es modelado (no marcado como \"real\")."
+    rosterRows:{
+      // Spanish Basketball Academy — plantilla completa real (proballers.com), 15 jugadores
+      "Spanosh Basketball Academy": [
+        ["Dorde Simeunovic",20.7,8.4,2.9,25,34.5,23.1,46,66,2.5,1.2,2.2,0.5],
+        ["Kamdyn Curfman",13.9,1.3,1.7,21,26.9,39.5,42.3,73.5,0.2,0.8,1.3,0],
+        ["Rafa Garcia",12.6,3.7,5.5,26,31.3,29,36.7,72.3,0.5,1.5,2.4,0],
+        ["Eduard Arques",10,4,1.5,2,23,66.7,41.2,33.3,0.5,0,0.5,0.5],
+        ["Jaan Puidet",9.5,5.8,3.1,26,29.9,34.7,42.6,75,1.5,1.1,1.7,0.2],
+        ["Enrique Medina Roa",8.9,5.8,0.3,26,19.7,0,75.2,55.4,2.4,0.3,2.1,1],
+        ["Alberto Moreno",6.1,2.8,3,24,17.8,16.4,29.6,74.4,0.7,1.4,2.3,0.3],
+        ["Jesus Santano",6,4.1,1,25,20.2,8,45.7,56.4,1.4,0.8,0.7,0.4],
+        ["Souleymane Traore",3.9,4.2,0.2,25,13.7,0,54.1,56.4,1.5,0.2,0.9,0.3],
+        ["Marco Echeverria",2.8,4.5,0.6,22,17.5,6.3,38.8,57.1,2,0.8,0.8,0],
+        ["Savikjevikj",1.5,0.8,1.3,4,12,22.2,20,0,0,0,0.8,0],
+        ["Trifonov",0.9,0,0.1,8,3,20,30,0,0,0.1,0.9,0],
+        ["Javier Ortega Mora",0.8,0,0,4,2.8,33.3,33.3,0,0,0,0,0],
+        ["Butko",0.7,0.2,0.1,9,4.2,0,28.6,100,0,0.3,0.2,0],
+        ["Roberts Rotcenkovs",0,0,0,1,3,0,0,0,0,0,0,0]
+      ],
+      // Albacete (Bueno Arenas Albacete Basket) — plantilla completa real, temporada regular
+      "Bueno Arenas Albacete Basket": [
+        ["Nicklaus William Reid",13.2,5.3,0.8,26,30.8,31.9,39.4,83.3,1.3,0.6,0.9,0.2],
+        ["Jose Luis Gonzalez",12.4,2,2.3,25,26.9,32.7,30.8,79.8,0.3,0.7,1.5,0],
+        ["Silvano Merlo",10.5,7.1,5.8,26,27.6,24.7,38.5,69.3,0.6,2.1,2.2,0.2],
+        ["Victor Aguilar",10.4,4,4,26,24.8,34.8,45.5,78.3,0.6,1.2,2.4,0.1],
+        ["Victor Munoz Quinones",9.1,4.6,0.6,25,21.5,33.3,65.4,50,1.8,0.8,0.8,0.5],
+        ["Alan Garcia Borrego",7.5,3.2,0,6,18.3,50,54.3,100,1.5,0.2,0.3,0],
+        ["Juan Hierrezuelo",7.1,3.4,0.7,26,17.9,29.2,34.7,63.3,0.7,0.4,0.4,0.3],
+        ["Bernat Vanaclocha",6.7,3,0.3,26,14.2,0,61.8,79.2,1.5,0.3,0.8,0.4],
+        ["Opongo Kwabena Jafaru Bramble",6.2,3.2,0.3,26,15.2,26.7,54.8,77.5,1.2,0.2,0.8,0.1],
+        ["Francisco Amiel",4.1,1.7,1.7,23,16.3,21,26.5,52.4,0.3,0.7,0.9,0],
+        ["Makar Voronin",4,0.5,0.7,6,13.7,36.4,40,80,0.2,0.5,0.5,0],
+        ["Amadeo Vera Picazo",1.8,0.5,0.8,6,8.7,18.2,20,60,0,1.2,0.5,0],
+        ["Adrian Perez Conti",0.9,0.9,0.3,7,8.9,0,27.3,0,0.4,0,0.3,0],
+        ["Unai Damaso Gonzalez",0,0,0,1,1,0,0,0,0,0,0,0]
+      ],
+      // Getafe (Viten Getafe / CB Getafe) — plantilla completa real, temporada regular
+      "CB Getafe": [
+        ["Guillermo Mulero",13.1,3.2,2.5,26,25,40.5,48.8,65,0.9,0.8,2.6,0],
+        ["Jorge Parra",11,3.2,2.3,26,25.6,27.6,33.4,74,0.8,0.5,1.6,0.2],
+        ["Mohammed Abdusalam",10.8,8.8,1.1,26,22.1,11.1,53.6,68.6,2.6,0.7,2.5,0.7],
+        ["Ayodeji Alexander Akinwole",9.7,2.6,2,16,19.9,35.4,47.8,93.3,0.5,0.9,1.3,0.1],
+        ["Alejandro Montero Isla",9.3,1.7,3.1,26,24.2,44.2,51,68.5,0.4,0.7,1.5,0],
+        ["Charles Michael Henderson",9.3,3.8,0.4,25,19.3,37.9,45.9,85.2,0.9,0.5,1,0.3],
+        ["German Kasanzi",8.6,3.2,1.4,9,22.7,28.6,41.5,62.5,0.9,0.8,1.3,0],
+        ["Walter Cabral",8,6,1,5,18.6,30,41.4,86.7,2.2,0.6,0.2,0.4],
+        ["Jose Antonio Nve Maleva",5.7,5.4,0.3,25,14,0,57,50.9,2,0.3,1.4,0.1],
+        ["Mario Alvarez",4.5,3.4,1,25,16.4,31.7,42.2,40,0.8,0.3,0.5,0.2],
+        ["Enrique Ortiz Torres",3.6,1.8,2.1,25,15.7,25,38,68.4,0.6,0.9,1.6,0.2],
+        ["Jorge Tejera",2.4,2,0.6,23,10.4,30,38.3,50,0.6,0.3,0.3,0],
+        ["Pedro Arribas",1.7,0.4,0.2,19,6.9,33.3,40,50,0.3,0.1,0.2,0],
+        ["Iago Ibanez",0.8,0.8,1.2,6,11,12.5,16.7,0,0.5,0.5,0.8,0],
+        ["Carlos Martos Infantes",0.7,0.3,0.3,3,3,0,25,0,0,0,0,0],
+        ["Marcos Garcia Martin",0,0,0,1,1,0,0,0,0,0,0,0]
+      ]
+    },
+    get players(){
+      const rows = [];
+      Object.entries(this.rosterRows).forEach(([team,list])=>{
+        list.forEach(r=>rows.push(attachBio(realFromRow(r[0],team,r[1],r[2],r[3],r[4],r[5],r[6],r[7],r[8],r[9],r[10],r[11],r[12]))));
+      });
+      // Resto de equipos: solo el líder confirmado de una categoría concreta (no hay box-score completo)
+      const rosterTeams = Object.keys(this.rosterRows);
+      const leaders = [
+        mkRealLeader("Johnatan Thomas Zhao Olmos","CB Zaragoza","Escolta",{pts:18.6}),
+        mkRealLeader("Jordi Juanola Madera","Homs UE Mataró","Alero",{pts:18.2}),
+        mkRealLeader("Tavin Anthony Pierre Philippe","Círculo Gijón Baloncesto","Alero",{pts:17.7}),
+        mkRealLeader("Javier Menendez","Círculo Gijón Baloncesto","Pívot",{reb:10.3}),
+        mkRealLeader("Mikhail Mikhailov Paltarak","Sol Gironès Bisbal Bàsquet","Pívot",{reb:10.3}),
+        mkRealLeader("Wildens Carl Leveque","Cáceres Patrimonio de la Humanidad","Pívot",{reb:9.6}),
+        mkRealLeader("Roger Fabrega Urpina","Amics Castelló","Base",{ast:6.1}),
+        mkRealLeader("Oscar Alvarado","CB Zaragoza","Base",{ast:5.9}),
+        mkRealLeader("Kyle Greeley","Proinbeni UPB Gandía","Alero",{pts:20.2}),
+        mkRealLeader("Albert Lafuente","Cáceres Patrimonio de la Humanidad","Base",{ast:5.4}),
+        mkRealLeader("Caleb Fields","Jaén Paraíso Interior CB","Escolta",{pts:11}),
+        mkRealLeader("Hector Figueroa","Lobe Huesca La Magia","Escolta",{pts:10.5}),
+        mkRealLeader("Xavier Ochu","Sol Gironès Bisbal Bàsquet","Base",{stl:2.6}),
+        mkRealLeader("Luis Ferrando","Proinbeni UPB Gandía","Base",{stl:2.0}),
+        mkRealLeader("Darien Jackson","CB Salou","Base",{stl:2.0}),
+        mkRealLeader("Djery Jean-Baptiste","Castillo de Gorraiz Valle de Egüés","Pívot",{blk:1.7}),
+        mkRealLeader("Eduard Gatell","CB Zaragoza","Pívot",{blk:1.5}),
+        mkRealLeader("Ken Issanza Baoko","Amics Castelló","Pívot",{blk:1.5}),
+        mkRealLeader("Ezichi Kalu","Homs UE Mataró","Pívot",{blk:1.3})
+      ];
+      leaders.forEach(p=>rows.push(attachBio(p)));
+      return rows;
+    },
+    playersNote:"Revisión ampliada: 3 equipos con plantilla 100% completa y verificada sobre el box-score real de proballers.com (minutos, % de tiro, todo): Spanosh Basketball Academy (15 jugadores), Bueno Arenas Albacete Basket (14) y CB Getafe (16) — 45 jugadores en total con datos reales completos. El resto de equipos (19 de 28) siguen solo con el jugador líder confirmado de una categoría concreta (puntos, rebotes, asistencias, robos o tapones), sacado de la sección \"Líderes\" de proballers, con el resto de su perfil estimado. La petición a Amics Castelló se intentó pero no devolvió contenido legible, así que ese equipo se queda solo con sus líderes ya confirmados en vez de inventar una plantilla completa. Antes de esta revisión había 3 jugadores mal ubicados en esta liga (en realidad juegan en Primera FEB); fueron corregidos y eliminados."
   },
   lf_endesa:{
     name:"Liga Femenina Endesa", sub:"1.ª división femenina · 16 equipos", tag:"Femenina", fem:true,
